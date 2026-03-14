@@ -282,7 +282,7 @@ body{
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button></div></div>
+    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
     <div id="dark-overlay"></div>
@@ -1391,7 +1391,16 @@ document.getElementById('done-decorating').onclick=()=>{
   document.getElementById('done-decorating').style.display='none';
   furnitureLocked=true;
   document.getElementById('shop-area').classList.add('furniture-locked');
+  document.getElementById('design-btn').style.display='';
   showScreen('clothing-screen');
+  initClothingScreen();
+};
+
+// Design button - go back to clothing design
+document.getElementById('design-btn').onclick=()=>{
+  if(inventory.length>=5)return;
+  showScreen('clothing-screen');
+  clothingState={type:'tshirt',color:0,graphic:null};
   initClothingScreen();
 };
 
