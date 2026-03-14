@@ -381,6 +381,72 @@ body{
   background:none;border:none;color:#5a3a18;
   font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;
 }
+/* DECOR & AVATAR TABS */
+#decor-tab{
+  position:absolute;top:150px;right:0;z-index:40;
+  background:#78a858;border:3px solid #5a3a18;border-right:none;
+  padding:8px 6px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px #98c878,-2px 2px 4px rgba(0,0,0,0.3);
+  display:none;flex-direction:column;align-items:center;gap:2px;
+}
+#decor-tab canvas{image-rendering:pixelated}
+#avatar-tab{
+  position:absolute;top:200px;right:0;z-index:40;
+  background:#9878b0;border:3px solid #5a3a18;border-right:none;
+  padding:8px 6px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px #b898d0,-2px 2px 4px rgba(0,0,0,0.3);
+  display:none;flex-direction:column;align-items:center;gap:2px;
+}
+#avatar-tab canvas{image-rendering:pixelated}
+#decor-menu,#avatar-menu{
+  position:absolute;top:40px;right:50px;z-index:50;
+  background:#c8a065;border:4px solid #5a3a18;
+  box-shadow:inset 0 0 0 2px #e8c888,4px 4px 12px rgba(0,0,0,0.5);
+  width:340px;height:400px;display:none;flex-direction:column;
+}
+#decor-menu-content,#avatar-menu-content{flex:1;padding:8px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+#avatar-menu-header{
+  background:#c8a065;border-bottom:3px solid #5a3a18;
+  padding:8px;display:flex;align-items:center;gap:12px;
+}
+#avatar-menu-header canvas{image-rendering:pixelated}
+#avatar-menu-header span{font-family:'Press Start 2P',monospace;font-size:7px;color:#3a2210}
+.avatar-clothing-item{
+  width:60px;height:60px;border:2px solid #5a3a18;
+  background:#e8d8c0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;image-rendering:pixelated;flex-direction:column;gap:2px;
+}
+.avatar-clothing-item.equipped{border-color:#48a848;box-shadow:0 0 6px #48a848}
+.avatar-clothing-item canvas{image-rendering:pixelated}
+.avatar-clothing-item span{font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210}
+.decor-inv-item{
+  width:60px;height:60px;border:2px solid #5a3a18;
+  background:#e8d8c0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;image-rendering:pixelated;
+}
+.decor-inv-item canvas{image-rendering:pixelated}
+.tooltip-callout{
+  position:absolute;z-index:59;display:none;flex-direction:row;align-items:center;gap:0;
+}
+.tooltip-box{
+  background:#c8a065;border:3px solid #5a3a18;padding:6px 10px;
+  box-shadow:inset 0 0 0 1px #e8c888,2px 2px 6px rgba(0,0,0,0.3);
+  max-width:200px;
+}
+.tooltip-box p{color:#3a2210;font-family:'Press Start 2P',monospace;font-size:5px;line-height:1.8;margin:0}
+.tooltip-line{width:20px;height:3px;background:#5a3a18;flex-shrink:0}
+.tooltip-ok{
+  background:linear-gradient(180deg,#48a848 0%,#308830 100%);
+  border:2px solid #5a3a18;color:#f8e8c0;
+  padding:3px 8px;font-family:'Press Start 2P',monospace;font-size:4px;
+  cursor:pointer;margin-top:4px;
+}
+#menu-close-btn{
+  position:absolute;top:4px;right:8px;
+  background:none;border:none;color:#5a3a18;
+  font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;
+}
+
 #tutorial-popup{
   position:absolute;top:90px;right:50px;z-index:58;
   display:none;flex-direction:row;align-items:center;gap:0;
@@ -482,6 +548,12 @@ body{
       </div>
       <div id="store-menu-content"></div>
     </div>
+    <div id="decor-tab"><canvas id="decor-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">DECOR</span></div>
+    <div id="decor-menu"><button class="menu-close-btn" onclick="document.getElementById('decor-menu').style.display='none'" style="position:absolute;top:4px;right:8px;background:none;border:none;color:#5a3a18;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer">x</button><div style="padding:8px 8px 4px;font-family:'Press Start 2P',monospace;font-size:7px;color:#3a2210;border-bottom:3px solid #5a3a18">MY DECOR</div><div id="decor-menu-content"></div></div>
+    <div id="avatar-tab"><canvas id="avatar-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">AVATAR</span></div>
+    <div id="avatar-menu"><button onclick="document.getElementById('avatar-menu').style.display='none'" style="position:absolute;top:4px;right:8px;background:none;border:none;color:#5a3a18;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer">x</button><div id="avatar-menu-header"><canvas id="avatar-preview-small" width="32" height="32" style="width:64px;height:64px"></canvas><span>YOUR AVATAR</span></div><div id="avatar-menu-content"></div></div>
+    <div id="tooltip-decor" class="tooltip-callout" style="top:148px;right:50px"><div class="tooltip-box"><p>This is the decor tab. The decor you buy in the store will appear here.</p><button class="tooltip-ok" id="tooltip-decor-ok">OK</button></div><div class="tooltip-line"></div></div>
+    <div id="tooltip-avatar" class="tooltip-callout" style="top:198px;right:50px;display:none"><div class="tooltip-box"><p>This is the avatar tab. The clothes you buy for your avatar are here.</p><button class="tooltip-ok" id="tooltip-avatar-ok">OK</button></div><div class="tooltip-line"></div></div>
     <div id="tutorial-popup">
       <div id="tutorial-box">
         <p>This is the Store. You can buy furniture and more supplies here.</p>
@@ -2220,9 +2292,7 @@ const showStoreTab = () => {
   }
 };
 
-document.getElementById('tutorial-ok').onclick=()=>{
-  document.getElementById('tutorial-popup').style.display='none';
-};
+// tutorial-ok handler is set later with tooltip flow
 
 document.getElementById('store-tab').onclick=()=>{
   const menu=document.getElementById('store-menu');
@@ -2346,12 +2416,13 @@ const renderStoreMenu = () => {
           document.getElementById('shop-hint').textContent='New furniture added! You can rearrange your store.';
           enableRedecorate();
         } else if(si.type==='decor'){
-          placeItem(si.itemKey);
+          ownedDecor.push({itemKey:si.itemKey,id:si.id});
         } else if(si.type==='avatar'){
           player.accessory=si.accIdx;
-          // Update player sprite
-          const sprite=document.getElementById('player-sprite');
-          drawChar(sprite.querySelector('canvas'),player);
+          updatePlayerSprite();
+          if(!ownedAvatarClothes.find(a=>a.id===si.id)){
+            ownedAvatarClothes.push({id:si.id,name:si.name,accIdx:si.accIdx});
+          }
         }
         renderStoreMenu();
       };
@@ -2395,6 +2466,131 @@ document.getElementById('redecorate-btn').onclick=()=>{
   document.getElementById('redecorate-btn').style.display='none';
   boughtFurniture=false;
   document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
+};
+
+// ============ DECOR & AVATAR TABS ============
+let ownedDecor=[];// {itemKey, id}
+let ownedAvatarClothes=[];// {id, name, accIdx}
+
+const drawDecorTabIcon = () => {
+  const ctx=document.getElementById('decor-tab-icon').getContext('2d');
+  ctx.clearRect(0,0,16,16);
+  // Couch icon
+  rect(ctx,2,6,12,6,'#a07848');rect(ctx,4,8,8,4,'#b88858');
+  rect(ctx,1,5,3,7,'#8a6838');rect(ctx,12,5,3,7,'#8a6838');
+  rect(ctx,3,12,2,2,'#6a4828');rect(ctx,11,12,2,2,'#6a4828');
+};
+
+const drawAvatarTabIcon = () => {
+  const ctx=document.getElementById('avatar-tab-icon').getContext('2d');
+  ctx.clearRect(0,0,16,16);
+  // T-shirt icon
+  rect(ctx,4,4,8,9,'#9878b0');rect(ctx,4,4,3,9,'#a888c0');
+  rect(ctx,2,4,2,4,'#9878b0');rect(ctx,12,4,2,4,'#8868a0');
+  rect(ctx,6,2,4,3,'#806090');
+};
+
+const showDecorAndAvatarTabs = () => {
+  document.getElementById('decor-tab').style.display='flex';
+  document.getElementById('avatar-tab').style.display='flex';
+  drawDecorTabIcon();
+  drawAvatarTabIcon();
+};
+
+// Decor tab click
+document.getElementById('decor-tab').onclick=()=>{
+  const menu=document.getElementById('decor-menu');
+  if(menu.style.display==='flex'){menu.style.display='none';}
+  else{menu.style.display='flex';renderDecorMenu();}
+};
+
+const renderDecorMenu = () => {
+  const content=document.getElementById('decor-menu-content');
+  content.innerHTML='';
+  if(ownedDecor.length===0){
+    content.innerHTML='<div class="inv-empty-msg">No decor items yet. Buy some in the Store!</div>';
+    return;
+  }
+  ownedDecor.forEach((d,i)=>{
+    const div=document.createElement('div');div.className='decor-inv-item';
+    const it=ITEMS[d.itemKey];
+    if(it){
+      const c=document.createElement('canvas');c.width=it.w+2;c.height=it.h+2;
+      c.style.width=Math.min((it.w+2)*0.6,50)+'px';
+      c.style.height=Math.min((it.h+2)*0.6,50)+'px';
+      it.draw(c.getContext('2d'));
+      div.appendChild(c);
+      div.onclick=()=>{placeItem(d.itemKey);ownedDecor.splice(i,1);renderDecorMenu();};
+    }
+    content.appendChild(div);
+  });
+};
+
+// Avatar tab click
+document.getElementById('avatar-tab').onclick=()=>{
+  const menu=document.getElementById('avatar-menu');
+  if(menu.style.display==='flex'){menu.style.display='none';}
+  else{menu.style.display='flex';renderAvatarMenu();}
+};
+
+const renderAvatarMenu = () => {
+  // Update avatar preview
+  drawChar(document.getElementById('avatar-preview-small'),player);
+  const content=document.getElementById('avatar-menu-content');
+  content.innerHTML='';
+  // "None" option
+  const noneDiv=document.createElement('div');noneDiv.className='avatar-clothing-item'+(player.accessory===0?' equipped':'');
+  const noneSpan=document.createElement('span');noneSpan.textContent='None';
+  noneDiv.appendChild(noneSpan);
+  noneDiv.onclick=()=>{player.accessory=0;renderAvatarMenu();updatePlayerSprite();};
+  content.appendChild(noneDiv);
+
+  ownedAvatarClothes.forEach(ac=>{
+    const div=document.createElement('div');div.className='avatar-clothing-item'+(player.accessory===ac.accIdx?' equipped':'');
+    const c=document.createElement('canvas');c.width=32;c.height=32;
+    c.style.width='40px';c.style.height='40px';
+    const tempP=Object.assign({},player);tempP.accessory=ac.accIdx;
+    drawChar(c,tempP);
+    div.appendChild(c);
+    const span=document.createElement('span');span.textContent=ac.name;
+    div.appendChild(span);
+    div.onclick=()=>{player.accessory=ac.accIdx;renderAvatarMenu();updatePlayerSprite();};
+    content.appendChild(div);
+  });
+};
+
+const updatePlayerSprite = () => {
+  const sprite=document.getElementById('player-sprite');
+  drawChar(sprite.querySelector('canvas'),player);
+};
+
+// Update store buy handler to add to owned lists
+const origStoreBuyAvatar = (si) => {
+  if(!ownedAvatarClothes.find(a=>a.id===si.id)){
+    ownedAvatarClothes.push({id:si.id,name:si.name,accIdx:si.accIdx});
+  }
+};
+const origStoreBuyDecor = (si) => {
+  ownedDecor.push({itemKey:si.itemKey,id:si.id});
+};
+
+// Tutorial tooltip flow after store tutorial
+document.getElementById('tutorial-ok').onclick=()=>{
+  document.getElementById('tutorial-popup').style.display='none';
+  // Show decor and avatar tabs
+  showDecorAndAvatarTabs();
+  // Show decor tooltip
+  document.getElementById('tooltip-decor').style.display='flex';
+};
+
+document.getElementById('tooltip-decor-ok').onclick=()=>{
+  document.getElementById('tooltip-decor').style.display='none';
+  // Show avatar tooltip
+  document.getElementById('tooltip-avatar').style.display='flex';
+};
+
+document.getElementById('tooltip-avatar-ok').onclick=()=>{
+  document.getElementById('tooltip-avatar').style.display='none';
 };
 
 initCharCreate();
