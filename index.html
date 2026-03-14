@@ -351,7 +351,7 @@ body{
         <button class="sdv-btn" id="shop-name-ok" style="font-size:7px;padding:6px 16px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button>
       </div>
     </div>
-    <div id="sold-out-overlay"><h1>SOLD OUT!</h1><p>All clothes have been sold!</p></div>
+    <div id="sold-out-overlay"><h1>SOLD OUT!</h1><p>All clothes have been sold!</p><button class="sdv-btn" id="sold-out-ok" style="font-size:9px;padding:8px 24px;margin-top:8px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button></div>
     <div id="dark-overlay"></div>
     <div id="shop-tab"><span class="notif"></span><canvas id="shop-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">SHOP</span></div>
     <div id="inventory-menu">
@@ -1741,6 +1741,15 @@ const checkShowDonePlacing = () => {
 // Observe shop area for clothing additions
 const shopAreaObserver=new MutationObserver(()=>{checkShowDonePlacing();});
 shopAreaObserver.observe(document.getElementById('shop-area'),{childList:true,subtree:true});
+
+document.getElementById('sold-out-ok').onclick=()=>{
+  document.getElementById('sold-out-overlay').style.display='none';
+  // Let player design and place more clothing
+  document.getElementById('design-btn').style.display='inline-block';
+  showShopTab(false);
+  document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
+  requestAnimationFrame(gameLoop);
+};
 
 initCharCreate();
 </script>
