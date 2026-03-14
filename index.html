@@ -339,7 +339,7 @@ body{
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
+    <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
     <div id="shop-name-display"></div>
@@ -379,8 +379,8 @@ body{
     <div id="clothing-bottom">
       <button class="sdv-btn" id="clothing-done" style="font-size:7px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button>
     </div>
-    <div id="locked-toast">Locked.</div>
   </div>
+  <div id="locked-toast">Locked.</div>
 </div>
 <script>
 // ============ STARDEW-STYLE SPRITE ENGINE ============
@@ -1416,6 +1416,10 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
   const existing=target.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
   if(isRack&&existing>=4)return;
   if(!isRack&&existing>=3)return;
+  // Find actual index in case inventory shifted
+  const actualIdx=inventory.indexOf(item);
+  if(actualIdx===-1)return;
+  invIdx=actualIdx;
 
   const el=document.createElement('canvas');
   el.className=isRack?'clothing-on-rack':'clothing-on-shelf';
@@ -1459,13 +1463,15 @@ document.getElementById('done-decorating').onclick=()=>{
   furnitureLocked=true;
   document.getElementById('shop-area').classList.add('furniture-locked');
   document.getElementById('design-btn').style.display='inline-block';
+  document.getElementById('shop-title').textContent='YOUR SHOP';
+  document.getElementById('shop-hint').textContent='Design clothing, then place it on shelves & racks';
   showScreen('clothing-screen');
   initClothingScreen();
 };
 
 // Design button - go back to clothing design
 document.getElementById('design-btn').onclick=()=>{
-  if(inventory.length>=5)return;
+  if(inventory.length>=5){showLockedToast();return;}
   showScreen('clothing-screen');
   clothingState={type:'tshirt',color:0,graphic:null};
   initClothingScreen();
@@ -1473,7 +1479,7 @@ document.getElementById('design-btn').onclick=()=>{
 
 // Done designing clothing -> back to shop with inventory
 document.getElementById('clothing-done').onclick=()=>{
-  if(inventory.length>=5)return;
+  if(inventory.length>=5){showLockedToast();return;}
   // Save designed clothing to inventory
   inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
   clothingState={type:'tshirt',color:0,graphic:null};
@@ -1481,11 +1487,14 @@ document.getElementById('clothing-done').onclick=()=>{
   requestAnimationFrame(gameLoop);
   // Show shop tab with notification
   showShopTab(true);
-  // Show dark overlay briefly to guide player
+  // Show dark overlay to guide player to shop tab
   const overlay=document.getElementById('dark-overlay');
   overlay.style.display='block';
-  overlay.onclick=()=>{overlay.style.display='none';};
-  // Auto-dismiss after clicking shop tab
+  // Dismiss overlay when clicking anywhere
+  const dismiss=()=>{overlay.style.display='none';overlay.removeEventListener('click',dismiss);};
+  overlay.addEventListener('click',dismiss);
+  // Auto-dismiss after 3 seconds
+  setTimeout(dismiss,3000);
 };
 
 // Shop tab click
@@ -1512,6 +1521,7 @@ document.getElementById('done-placing-btn').onclick=()=>{
   document.getElementById('shop-tab').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
   document.getElementById('start-day-btn').style.display='inline-block';
+  document.getElementById('shop-hint').textContent='Ready to open for business!';
 };
 
 // ============ DAY SIMULATION ============
@@ -1672,6 +1682,7 @@ const dayLoop = () => {
 const startDay = () => {
   dayRunning=true;
   document.getElementById('start-day-btn').style.display='none';
+  document.getElementById('shop-hint').textContent='Stand near the register to serve customers!';
   document.getElementById('money-tab').style.display='block';
   document.getElementById('money-tab').textContent='$'+money;
 
