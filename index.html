@@ -1834,10 +1834,15 @@ const startDay = () => {
 };
 
 document.getElementById('start-day-btn').onclick=()=>{
-  document.getElementById('shop-name-popup').style.display='flex';
-  document.getElementById('shop-name-input').focus();
+  if(!window._shopNameDone){
+    document.getElementById('shop-name-popup').style.display='flex';
+    document.getElementById('shop-name-input').focus();
+  } else {
+    startDay();
+  }
 };
 document.getElementById('shop-name-ok').onclick=()=>{
+  window._shopNameDone=true;
   const name=document.getElementById('shop-name-input').value.trim()||'My Shop';
   document.getElementById('shop-name-popup').style.display='none';
   const display=document.getElementById('shop-name-display');
