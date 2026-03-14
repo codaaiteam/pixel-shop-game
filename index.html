@@ -139,6 +139,64 @@ body{
 .panel-btn canvas{image-rendering:pixelated}
 #player-sprite{position:absolute;z-index:8;image-rendering:pixelated;pointer-events:none}
 #player-sprite canvas{image-rendering:pixelated}
+
+/* CLOTHING DESIGN */
+#clothing-screen{background:#b08848;justify-content:flex-start;gap:6px;padding:8px;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+}
+#clothing-screen h2{color:#3a2210;font-size:11px;margin:2px 0;text-shadow:1px 1px #d8b878}
+.clothing-types{display:flex;gap:8px;justify-content:center}
+.clothing-type-btn{
+  background:#c8a065;border:3px solid #5a3a18;padding:8px 12px;
+  font-family:'Press Start 2P',monospace;font-size:7px;color:#3a2210;
+  cursor:pointer;text-align:center;min-width:90px;
+  box-shadow:inset 0 0 0 1px #e8c888;position:relative;
+}
+.clothing-type-btn:hover{background:#d8b078}
+.clothing-type-btn.selected{background:#a87838;color:#f8e8c0;box-shadow:inset 0 2px 4px rgba(0,0,0,0.3)}
+.clothing-type-btn.locked{opacity:0.5;cursor:not-allowed}
+.clothing-type-btn.locked::after{content:'LOCKED';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:5px;color:#a03030}
+#clothing-workspace{
+  display:flex;gap:10px;flex:1;width:100%;max-height:420px;
+}
+#clothing-preview-area{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  background:#c8a065;border:3px solid #5a3a18;
+  box-shadow:inset 0 0 0 2px #e8c888;
+}
+#clothing-canvas{image-rendering:pixelated;background:#e8d8c0;border:2px solid #8a6838}
+#clothing-sidebar{
+  width:200px;display:flex;flex-direction:column;gap:6px;
+}
+.design-section{
+  background:#c8a065;border:2px solid #5a3a18;padding:6px;
+  box-shadow:inset 0 0 0 1px #e8c888;
+}
+.design-section label{color:#3a2210;font-size:6px;display:block;margin-bottom:4px;text-shadow:1px 1px #d8b878}
+.design-colors{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.design-color-btn{
+  width:20px;height:20px;border:2px solid #5a3a18;cursor:pointer;padding:0;
+}
+.design-color-btn.selected{border-color:#f8e8c0;box-shadow:0 0 0 1px #5a3a18}
+.graphic-btn{
+  background:linear-gradient(180deg,#d8b878 0%,#b89058 100%);
+  border:2px solid #5a3a18;color:#3a2210;
+  padding:4px 8px;font-family:'Press Start 2P',monospace;font-size:6px;
+  cursor:pointer;display:flex;align-items:center;gap:4px;
+  box-shadow:inset 0 0 0 1px #e8d098;
+}
+.graphic-btn:hover{background:linear-gradient(180deg,#e8c888 0%,#c8a068 100%)}
+.graphic-btn.selected{background:#a87838;color:#f8e8c0}
+.graphic-btn.locked{opacity:0.45;cursor:not-allowed}
+.graphics-list{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+#locked-toast{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#5a3a18;color:#f8e8c0;font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:10px 20px;border:3px solid #8a6838;
+  box-shadow:0 0 20px rgba(0,0,0,0.5);z-index:100;display:none;
+  pointer-events:none;
+}
+#clothing-bottom{display:flex;gap:8px;justify-content:center;padding:4px 0}
 </style>
 </head>
 <body>
@@ -172,9 +230,26 @@ body{
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><span id="player-name-display"></span></div>
+    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
+  </div>
+  <div id="clothing-screen" class="screen">
+    <h2>DESIGN CLOTHING</h2>
+    <div class="clothing-types" id="clothing-types"></div>
+    <div id="clothing-workspace">
+      <div id="clothing-preview-area">
+        <canvas id="clothing-canvas" width="120" height="120" style="width:240px;height:240px"></canvas>
+      </div>
+      <div id="clothing-sidebar">
+        <div class="design-section"><label>COLOR</label><div class="design-colors" id="clothing-colors"></div></div>
+        <div class="design-section"><label>GRAPHICS</label><div class="graphics-list" id="graphics-list"></div></div>
+      </div>
+    </div>
+    <div id="clothing-bottom">
+      <button class="sdv-btn" id="back-to-shop" style="font-size:7px">BACK TO SHOP</button>
+    </div>
+    <div id="locked-toast">Locked.</div>
   </div>
 </div>
 <script>
@@ -932,6 +1007,149 @@ const gameLoop = () => {
 };
 
 document.getElementById('start-btn').onclick=()=>{player.name=document.getElementById('name-input').value.trim()||'Player';startCutscene();};
+
+// ============ CLOTHING DESIGN ============
+const CLOTHING_TYPES=[
+  {id:'tshirt',name:'T-Shirt',locked:false},
+  {id:'hoodie',name:'Hoodie',locked:true},
+  {id:'jacket',name:'Jacket',locked:true},
+];
+const CLOTHING_COLORS=['#c83838','#4070b0','#488848','#d08828','#785098','#e0d0b8','#385058','#f8f0e0','#202020','#c88828','#389880','#b04040','#d870c8','#6898c8'];
+const CLOTHING_GRAPHICS=[
+  {id:'dog',name:'Dog',locked:false},
+  {id:'cat',name:'Cat',locked:false},
+  {id:'flowers',name:'Flowers',locked:false},
+  {id:'star',name:'Star',locked:true},
+  {id:'heart',name:'Heart',locked:true},
+  {id:'skull',name:'Skull',locked:true},
+  {id:'lightning',name:'Lightning',locked:true},
+  {id:'crown',name:'Crown',locked:true},
+];
+let clothingState={type:'tshirt',color:0,graphic:null};
+
+const showLockedToast = () => {
+  const t=document.getElementById('locked-toast');
+  t.style.display='block';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.display='none';},800);
+};
+
+const drawClothingGraphic = (ctx,id,ox,oy) => {
+  const p=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(ox+x,oy+y,1,1);};
+  if(id==='dog'){
+    // Simple pixel dog face
+    p(1,0,'#8a6030');p(2,0,'#8a6030');p(4,0,'#8a6030');p(5,0,'#8a6030');
+    p(0,1,'#8a6030');p(1,1,'#a07040');p(2,1,'#a07040');p(4,1,'#a07040');p(5,1,'#a07040');p(6,1,'#8a6030');
+    p(1,2,'#a07040');p(2,2,'#302010');p(3,2,'#a07040');p(4,2,'#302010');p(5,2,'#a07040');
+    p(1,3,'#a07040');p(2,3,'#a07040');p(3,3,'#302010');p(4,3,'#a07040');p(5,3,'#a07040');
+    p(2,4,'#a07040');p(3,4,'#c08080');p(4,4,'#a07040');
+    p(1,5,'#a07040');p(2,5,'#a07040');p(3,5,'#a07040');p(4,5,'#a07040');p(5,5,'#a07040');
+  } else if(id==='cat'){
+    p(0,0,'#404040');p(6,0,'#404040');
+    p(0,1,'#505050');p(1,1,'#505050');p(5,1,'#505050');p(6,1,'#505050');
+    p(1,2,'#505050');p(2,2,'#60e060');p(3,2,'#505050');p(4,2,'#60e060');p(5,2,'#505050');
+    p(1,3,'#505050');p(2,3,'#505050');p(3,3,'#f0a0a0');p(4,3,'#505050');p(5,3,'#505050');
+    p(0,4,'#505050');p(1,4,'#505050');p(2,4,'#505050');p(3,4,'#505050');p(4,4,'#505050');p(5,4,'#505050');p(6,4,'#505050');
+    p(2,5,'#505050');p(4,5,'#505050');
+  } else if(id==='flowers'){
+    p(3,0,'#e84848');p(2,1,'#e84848');p(3,1,'#f8d028');p(4,1,'#e84848');p(3,2,'#e84848');
+    p(3,3,'#389830');p(3,4,'#389830');p(2,4,'#58b850');p(4,4,'#58b850');
+    p(0,1,'#d870c8');p(0,2,'#d870c8');p(1,1,'#f890e8');p(1,2,'#d870c8');
+    p(5,2,'#f8d028');p(6,2,'#f8d028');p(5,3,'#f8e048');p(6,3,'#f8d028');
+    p(0,3,'#389830');p(1,3,'#389830');p(5,4,'#389830');p(6,4,'#389830');
+  }
+};
+
+const drawClothingPreview = () => {
+  const ctx=document.getElementById('clothing-canvas').getContext('2d');
+  ctx.clearRect(0,0,120,120);
+  const c=CLOTHING_COLORS[clothingState.color];
+  const cH=shade(c,20),cS=shade(c,-25),cD=shade(c,-45);
+
+  if(clothingState.type==='tshirt'){
+    // T-shirt shape - big centered
+    rect(ctx,20,15,80,70,c);rect(ctx,20,15,30,70,cH);rect(ctx,70,15,30,70,cS);
+    // Sleeves
+    rect(ctx,5,15,15,30,c);rect(ctx,5,15,8,30,cH);
+    rect(ctx,100,15,15,30,cS);rect(ctx,100,15,8,30,c);
+    // Collar
+    rect(ctx,42,10,36,10,cD);rect(ctx,46,12,28,6,shade(c,-15));
+    // Bottom hem
+    rect(ctx,20,82,80,3,cD);
+    // Sleeve hems
+    rect(ctx,5,43,15,2,cD);rect(ctx,100,43,15,2,cD);
+    // Subtle fold lines
+    rect(ctx,45,30,2,50,'rgba(0,0,0,0.06)');rect(ctx,73,30,2,50,'rgba(0,0,0,0.06)');
+  }
+
+  // Draw selected graphic centered on shirt
+  if(clothingState.graphic){
+    const gx=46,gy=35;
+    ctx.save();
+    // Scale graphic 3x
+    const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+    const tctx=tc.getContext('2d');
+    drawClothingGraphic(tctx,clothingState.graphic,0,0);
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(tc,gx,gy,28,24);
+    ctx.restore();
+  }
+};
+
+const initClothingScreen = () => {
+  // Types
+  const typesEl=document.getElementById('clothing-types');
+  typesEl.innerHTML='';
+  CLOTHING_TYPES.forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='clothing-type-btn'+(t.locked?' locked':'')+(clothingState.type===t.id?' selected':'');
+    btn.textContent=t.name;
+    btn.onclick=()=>{
+      if(t.locked){showLockedToast();return;}
+      clothingState.type=t.id;clothingState.graphic=null;
+      initClothingScreen();
+    };
+    typesEl.appendChild(btn);
+  });
+
+  // Colors
+  const colorsEl=document.getElementById('clothing-colors');
+  colorsEl.innerHTML='';
+  CLOTHING_COLORS.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    btn.className='design-color-btn'+(clothingState.color===i?' selected':'');
+    btn.style.background=c;
+    btn.onclick=()=>{clothingState.color=i;initClothingScreen();};
+    colorsEl.appendChild(btn);
+  });
+
+  // Graphics
+  const gfxEl=document.getElementById('graphics-list');
+  gfxEl.innerHTML='';
+  CLOTHING_GRAPHICS.forEach(g=>{
+    const btn=document.createElement('button');
+    btn.className='graphic-btn'+(g.locked?' locked':'')+(clothingState.graphic===g.id?' selected':'');
+    btn.textContent=g.name;
+    btn.onclick=()=>{
+      if(g.locked){showLockedToast();return;}
+      clothingState.graphic=clothingState.graphic===g.id?null:g.id;
+      initClothingScreen();
+    };
+    gfxEl.appendChild(btn);
+  });
+
+  drawClothingPreview();
+};
+
+document.getElementById('done-decorating').onclick=()=>{
+  showScreen('clothing-screen');
+  initClothingScreen();
+};
+document.getElementById('back-to-shop').onclick=()=>{
+  showScreen('shop-screen');
+  requestAnimationFrame(gameLoop);
+};
+
 initCharCreate();
 </script>
 </body>
