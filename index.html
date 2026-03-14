@@ -441,10 +441,63 @@ body{
   padding:3px 8px;font-family:'Press Start 2P',monospace;font-size:4px;
   cursor:pointer;margin-top:4px;
 }
-#menu-close-btn{
-  position:absolute;top:4px;right:8px;
-  background:none;border:none;color:#5a3a18;
-  font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;
+
+/* MAIL SYSTEM */
+#mail-tab{
+  position:absolute;top:250px;right:0;z-index:40;
+  background:#d0d0d0;border:3px solid #5a3a18;border-right:none;
+  padding:8px 6px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px #e8e8e8,-2px 2px 4px rgba(0,0,0,0.3);
+  display:none;flex-direction:column;align-items:center;gap:2px;
+  position:relative;
+}
+#mail-tab{position:absolute;top:250px;right:0}
+#mail-tab canvas{image-rendering:pixelated}
+#mail-tab .mail-badge{
+  position:absolute;top:-5px;left:-5px;
+  background:#c83838;color:#f8e8c0;border:2px solid #5a3a18;
+  border-radius:50%;min-width:14px;height:14px;
+  font-family:'Press Start 2P',monospace;font-size:5px;
+  display:none;align-items:center;justify-content:center;
+  padding:1px;
+}
+#mail-window{
+  position:absolute;top:30px;left:50%;transform:translateX(-50%);z-index:55;
+  background:#e8e0d8;border:4px solid #5a3a18;
+  box-shadow:4px 4px 16px rgba(0,0,0,0.5);
+  width:600px;height:420px;display:none;flex-direction:column;
+}
+#mail-header{
+  background:#5a3a18;padding:6px 12px;display:flex;justify-content:space-between;align-items:center;
+}
+#mail-header span{color:#f8e8c0;font-family:'Press Start 2P',monospace;font-size:8px}
+#mail-header button{background:none;border:none;color:#f8e8c0;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer}
+#mail-body{display:flex;flex:1;overflow:hidden}
+#mail-list{
+  width:180px;background:#d0c8b8;border-right:3px solid #5a3a18;
+  overflow-y:auto;
+}
+.mail-sender{
+  padding:8px 6px;border-bottom:2px solid #b0a898;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+}
+.mail-sender:hover{background:#c0b8a8}
+.mail-sender.active{background:#a89878}
+.mail-sender canvas{image-rendering:pixelated;flex-shrink:0}
+.mail-sender-info{display:flex;flex-direction:column;gap:2px}
+.mail-sender-name{font-family:'Press Start 2P',monospace;font-size:5px;color:#3a2210}
+.mail-sender-email{font-family:'Press Start 2P',monospace;font-size:4px;color:#6a5838}
+.mail-unread{width:6px;height:6px;background:#c83838;border-radius:50%;flex-shrink:0}
+#mail-content{
+  flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;
+}
+#mail-from{font-family:'Press Start 2P',monospace;font-size:5px;color:#6a5838}
+#mail-text{font-family:'Press Start 2P',monospace;font-size:6px;color:#3a2210;line-height:2.2}
+.customer-name-label{
+  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
+  font-family:'Press Start 2P',monospace;font-size:5px;color:#f8e8c0;
+  background:rgba(58,40,16,0.8);padding:1px 4px;white-space:nowrap;
+  border:1px solid #8a6838;
 }
 
 #tutorial-popup{
@@ -554,6 +607,15 @@ body{
     <div id="avatar-menu"><button onclick="document.getElementById('avatar-menu').style.display='none'" style="position:absolute;top:4px;right:8px;background:none;border:none;color:#5a3a18;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer">x</button><div id="avatar-menu-header"><canvas id="avatar-preview-small" width="32" height="32" style="width:64px;height:64px"></canvas><span>YOUR AVATAR</span></div><div id="avatar-menu-content"></div></div>
     <div id="tooltip-decor" class="tooltip-callout" style="top:148px;right:50px"><div class="tooltip-box"><p>This is the decor tab. The decor you buy in the store will appear here.</p><button class="tooltip-ok" id="tooltip-decor-ok">OK</button></div><div class="tooltip-line"></div></div>
     <div id="tooltip-avatar" class="tooltip-callout" style="top:198px;right:50px;display:none"><div class="tooltip-box"><p>This is the avatar tab. The clothes you buy for your avatar are here.</p><button class="tooltip-ok" id="tooltip-avatar-ok">OK</button></div><div class="tooltip-line"></div></div>
+    <div id="mail-tab"><span class="mail-badge"></span><canvas id="mail-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">MAIL</span></div>
+    <div id="mail-window">
+      <div id="mail-header"><span>MAIL</span><button id="mail-close">x</button></div>
+      <div id="mail-body">
+        <div id="mail-list"></div>
+        <div id="mail-content"><div id="mail-from"></div><div id="mail-text">Select a message to read.</div></div>
+      </div>
+    </div>
+    <div id="tooltip-mail" class="tooltip-callout" style="top:248px;right:50px;display:none"><div class="tooltip-box"><p>This is mail. You will get complaints or make friends here.</p><button class="tooltip-ok" id="tooltip-mail-ok">OK</button></div><div class="tooltip-line"></div></div>
     <div id="tutorial-popup">
       <div id="tutorial-box">
         <p>This is the Store. You can buy furniture and more supplies here.</p>
@@ -1849,6 +1911,9 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
 
   const el=document.createElement('canvas');
   el.className=isRack?'clothing-on-rack':'clothing-on-shelf';
+  el.dataset.clothingGraphic=item.graphic||'none';
+  el.dataset.clothingColor=item.color;
+  el.dataset.clothingType=item.type;
 
   if(isRack){
     el.width=12;el.height=18;
@@ -1909,7 +1974,9 @@ document.getElementById('clothing-done').onclick=()=>{
   if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
   // Save designed clothing to inventory
   usedClothingSlots++;
-  inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
+  const newItem={type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic};
+  inventory.push(newItem);
+  allDesignedClothing.push(newItem);
   clothingState={type:'tshirt',color:0,graphic:null};
   showScreen('shop-screen');
   requestAnimationFrame(gameLoop);
@@ -1949,7 +2016,8 @@ document.getElementById('done-placing-btn').onclick=()=>{
 };
 
 // ============ DAY SIMULATION ============
-let money=0,dayRunning=false,customers=[],clothingOnDisplay=[],lastPayTime=0;
+let money=0,dayRunning=false,customers=[],clothingOnDisplay=[],lastPayTime=0,dayCount=0;
+let allDesignedClothing=[];// track all clothing ever designed {type,color,graphic}
 
 const CUST_SKINS=['#f8d8b0','#e8c090','#d0a070','#b88050','#986838','#784828'];
 const CUST_SHIRTS=['#c83838','#4070b0','#488848','#d08828','#785098','#385058','#c88828','#b04040'];
@@ -1974,7 +2042,8 @@ const getClothingOnDisplay = () => {
       const pr=parent.getBoundingClientRect();
       const area=document.getElementById('shop-area');
       const ar=area.getBoundingClientRect();
-      items.push({el,x:pr.left-ar.left+pr.width/2,y:pr.top-ar.top+pr.height/2,parent});
+      items.push({el,x:pr.left-ar.left+pr.width/2,y:pr.top-ar.top+pr.height/2,parent,
+        graphic:el.dataset.clothingGraphic||'none',clothingType:el.dataset.clothingType||'tshirt'});
     }
   });
   return items;
@@ -2074,9 +2143,17 @@ const dayLoop = () => {
     if(cust.state==='walking_to_clothing'){
       if(!cust.targetClothing){
         // Pick a random clothing item still on display
-        const avail=clothing.filter(c=>!customers.some(cc=>cc!==cust&&cc.targetClothing===c.el));
+        let avail=clothing.filter(c=>!customers.some(cc=>cc!==cust&&cc.targetClothing===c.el));
+        // Day 3+: customer preferences based on appearance
+        if(dayCount>=3&&avail.length>0){
+          const isWhiteHaired=cust.data&&(cust.data.hairColor===6||cust.isAlyssa);
+          if(isWhiteHaired){
+            // Prefers solid or floral only
+            const preferred=avail.filter(c=>c.graphic==='none'||c.graphic==='flowers');
+            if(preferred.length>0)avail=preferred;
+          }
+        }
         if(avail.length===0){
-          // No clothing available, leave
           cust.state='leaving';
           continue;
         }
@@ -2148,6 +2225,7 @@ const dayLoop = () => {
 };
 
 const startDay = () => {
+  dayCount++;
   dayRunning=true;
   document.getElementById('start-day-btn').style.display='none';
   document.getElementById('design-btn').style.display='none';
@@ -2179,6 +2257,10 @@ const startDay = () => {
   setTimeout(()=>{
     customers.push(spawnCustomer());
     spawned++;
+    // Spawn Alyssa on every other day starting day 2
+    if(dayCount>=2&&dayCount%2===0){
+      setTimeout(()=>{customers.push(spawnAlyssa());spawned++;},2000);
+    }
     setTimeout(spawnNext,3000);
   },1000);
 
@@ -2595,6 +2677,208 @@ document.getElementById('tooltip-decor-ok').onclick=()=>{
 document.getElementById('tooltip-avatar-ok').onclick=()=>{
   document.getElementById('tooltip-avatar').style.display='none';
 };
+
+// ============ MAIL SYSTEM ============
+let mailMessages=[];// {id,from,email,read,text,pfpDraw}
+let mailTabShown=false,alyssaSentFirst=false,alyssaSentThank=false,alyssaKnown=false;
+let selectedMailIdx=-1;
+
+const hasSolidOrFloral = () => {
+  return allDesignedClothing.some(c=>c.graphic===null||c.graphic==='flowers');
+};
+
+const drawMailTabIcon = () => {
+  const ctx=document.getElementById('mail-tab-icon').getContext('2d');
+  ctx.clearRect(0,0,16,16);
+  // Envelope icon
+  rect(ctx,1,4,14,10,'#e8d8c0');rect(ctx,1,4,14,2,'#d0c0a8');
+  rect(ctx,1,12,14,2,'#c8b898');
+  // Flap
+  ctx.fillStyle='#d8c8b0';
+  ctx.beginPath();ctx.moveTo(1,4);ctx.lineTo(8,9);ctx.lineTo(15,4);ctx.closePath();ctx.fill();
+  rect(ctx,1,4,1,10,'#b0a088');rect(ctx,14,4,1,10,'#b0a088');
+};
+
+const drawAlyssaPfp = (ctx) => {
+  ctx.clearRect(0,0,16,16);
+  // Black cat face
+  rect(ctx,2,2,12,10,'#303030');rect(ctx,4,4,8,6,'#404040');
+  // Ears
+  rect(ctx,2,0,3,3,'#303030');rect(ctx,11,0,3,3,'#303030');
+  // Eyes
+  rect(ctx,5,5,2,2,'#60e060');rect(ctx,9,5,2,2,'#60e060');
+  // Nose
+  rect(ctx,7,7,2,1,'#f0a0a0');
+  // Whiskers
+  rect(ctx,2,7,3,1,'#505050');rect(ctx,11,7,3,1,'#505050');
+};
+
+const updateMailBadge = () => {
+  const badge=document.getElementById('mail-tab').querySelector('.mail-badge');
+  const unread=mailMessages.filter(m=>!m.read).length;
+  if(unread>0){
+    badge.style.display='flex';
+    badge.textContent=unread>1?unread:'';
+  } else {
+    badge.style.display='none';
+  }
+};
+
+const showMailTab = () => {
+  if(!mailTabShown){
+    mailTabShown=true;
+    document.getElementById('mail-tab').style.display='flex';
+    drawMailTabIcon();
+    document.getElementById('tooltip-mail').style.display='flex';
+  } else {
+    document.getElementById('mail-tab').style.display='flex';
+  }
+};
+
+document.getElementById('tooltip-mail-ok').onclick=()=>{
+  document.getElementById('tooltip-mail').style.display='none';
+};
+
+document.getElementById('mail-tab').onclick=()=>{
+  const win=document.getElementById('mail-window');
+  if(win.style.display==='flex'){win.style.display='none';}
+  else{win.style.display='flex';renderMailList();}
+};
+
+document.getElementById('mail-close').onclick=()=>{
+  document.getElementById('mail-window').style.display='none';
+};
+
+const renderMailList = () => {
+  const list=document.getElementById('mail-list');
+  list.innerHTML='';
+  mailMessages.forEach((msg,i)=>{
+    const div=document.createElement('div');
+    div.className='mail-sender'+(selectedMailIdx===i?' active':'');
+    // PFP
+    const pfp=document.createElement('canvas');pfp.width=16;pfp.height=16;
+    pfp.style.width='24px';pfp.style.height='24px';
+    if(msg.pfpDraw)msg.pfpDraw(pfp.getContext('2d'));
+    div.appendChild(pfp);
+    // Info
+    const info=document.createElement('div');info.className='mail-sender-info';
+    const name=document.createElement('div');name.className='mail-sender-name';name.textContent=msg.from;
+    const email=document.createElement('div');email.className='mail-sender-email';email.textContent=msg.email;
+    info.appendChild(name);info.appendChild(email);
+    div.appendChild(info);
+    // Unread dot
+    if(!msg.read){
+      const dot=document.createElement('div');dot.className='mail-unread';
+      div.appendChild(dot);
+    }
+    div.onclick=()=>{
+      selectedMailIdx=i;
+      msg.read=true;
+      updateMailBadge();
+      renderMailList();
+      renderMailContent(msg);
+    };
+    list.appendChild(div);
+  });
+};
+
+const renderMailContent = (msg) => {
+  document.getElementById('mail-from').textContent=msg.email;
+  document.getElementById('mail-text').textContent=msg.text;
+};
+
+const addMail = (msg) => {
+  mailMessages.push(msg);
+  updateMailBadge();
+};
+
+// Check and send Alyssa's messages after each day
+const checkAlyssaMail = () => {
+  if(!alyssaSentFirst){
+    alyssaSentFirst=true;
+    if(hasSolidOrFloral()){
+      addMail({
+        id:'alyssa1_happy',from:'Alyssa.S',email:'Alyssa_SewingClub@pix.wow',read:false,
+        text:'Hello dear, my name is Alyssa.S. I am an elderly woman and have been to your store. I would like to tell you I LOVE your clothing! I will be coming more and more!\n\nSincerely, Alyssa.S',
+        pfpDraw:drawAlyssaPfp
+      });
+      alyssaKnown=true;
+    } else {
+      addMail({
+        id:'alyssa1_request',from:'Alyssa.S',email:'Alyssa_SewingClub@pix.wow',read:false,
+        text:'Hello dear, my name is Alyssa.S. I am an elderly woman and have been to your store. I have 3 grandchildren and would like to buy more from your store, but I have one small request from you. Please make some more solid color or floral clothing!\n\nSincerely, Alyssa.S',
+        pfpDraw:drawAlyssaPfp
+      });
+    }
+  } else if(!alyssaSentThank&&!alyssaKnown&&hasSolidOrFloral()){
+    alyssaSentThank=true;
+    alyssaKnown=true;
+    addMail({
+      id:'alyssa2_thanks',from:'Alyssa.S',email:'Alyssa_SewingClub@pix.wow',read:false,
+      text:'Hello honey, I\'m back and I just want to say thank you so much! I will definitely come back more!\n\nSincerely, Alyssa.S',
+      pfpDraw:drawAlyssaPfp
+    });
+  }
+};
+
+// ============ ALYSSA SPECIAL CUSTOMER ============
+const ALYSSA_DATA={
+  skin:4,eyes:1,hair:5,hairColor:6,shirtStyle:2,shirtColor:5,pants:0,accessory:1,name:'Alyssa'
+};
+// Override hair color to white for Alyssa
+const buildAlyssaSprite = () => {
+  const p=Object.assign({},ALYSSA_DATA);
+  // White hair = index 6 in HAIR_COLORS ('#e8d8c8')
+  return p;
+};
+
+const spawnAlyssa = () => {
+  const custData=buildAlyssaSprite();
+  const div=document.createElement('div');
+  div.className='customer-sprite';
+  div.style.position='relative';
+  const c=document.createElement('canvas');c.width=32;c.height=32;
+  c.style.width='64px';c.style.height='64px';
+  drawChar(c,custData);
+  div.appendChild(c);
+  // Name label if known
+  if(alyssaKnown){
+    const label=document.createElement('div');
+    label.className='customer-name-label';
+    label.textContent='Alyssa';
+    div.appendChild(label);
+  }
+  div.style.left=DOOR_X+'px';div.style.top=DOOR_Y+'px';
+  document.getElementById('shop-area').appendChild(div);
+  return{el:div,canvas:c,data:custData,x:DOOR_X,y:DOOR_Y,
+    state:'walking_to_clothing',targetClothing:null,frame:0,timer:0,
+    targetX:0,targetY:0,carrying:null,isAlyssa:true};
+};
+
+// Update sold-out handler to trigger mail check
+const origSoldOutHandler=document.getElementById('sold-out-ok').onclick;
+document.getElementById('sold-out-ok').onclick=()=>{
+  origSoldOutHandler();
+  // Check mail after day 2+
+  if(dayCount>=2){
+    checkAlyssaMail();
+  }
+  // Show mail tab on day 3+
+  if(dayCount>=3&&!mailTabShown){
+    showMailTab();
+  }
+};
+
+// Modify startDay to possibly spawn Alyssa on even days
+const origStartDay=startDay;
+// We can't easily override startDay since it's const, so we hook into the spawn logic instead
+// Instead, patch the spawnNext function by checking in dayLoop
+const shouldSpawnAlyssa = () => {
+  return dayCount>=2&&dayCount%2===0&&!customers.some(c=>c.isAlyssa);
+};
+
+// Patch: after first customer spawns on even days, also spawn Alyssa
+const origSpawnCustomer=spawnCustomer;
 
 initCharCreate();
 </script>
