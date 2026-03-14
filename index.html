@@ -853,10 +853,22 @@ const startShop = () => {
   requestAnimationFrame(gameLoop);
 };
 
+const updatePanelLimits = () => {
+  const area=document.getElementById('shop-area');
+  document.querySelectorAll('.panel-btn').forEach(btn=>{
+    const key=btn.dataset.itemKey;
+    if(ITEM_LIMITS[key]){
+      const count=area.querySelectorAll(`.placed-item[data-type="${key}"]`).length;
+      const atLimit=count>=ITEM_LIMITS[key];
+      btn.style.opacity=atLimit?'0.4':'1';
+      btn.style.filter=atLimit?'brightness(0.5)':'none';
+    }
+  });
+};
 const initItemPanel = () => {
   const panel=document.getElementById('item-panel');panel.innerHTML='';
   Object.entries(ITEMS).forEach(([key,item])=>{
-    const btn=document.createElement('button');btn.className='panel-btn';
+    const btn=document.createElement('button');btn.className='panel-btn';btn.dataset.itemKey=key;
     const c=document.createElement('canvas');c.width=item.w+2;c.height=item.h+2;
     c.style.width=Math.min((item.w+2)*0.6,36)+'px';
     c.style.height=Math.min((item.h+2)*0.6,36)+'px';
@@ -865,15 +877,17 @@ const initItemPanel = () => {
     const span=document.createElement('span');span.textContent=item.name;btn.appendChild(span);
     btn.onclick=()=>placeItem(key);panel.appendChild(btn);
   });
+  updatePanelLimits();
 };
 
-const ITEM_LIMITS={shelf:8,rack:5};
+const ITEM_LIMITS={shelf:8,rack:5,register:1,table:3,plant:3,counter:2,lamp:3,sign:1,rug:4,mannequin:9,mirror:3,barrel:4,flowers:1};
 const placeItem = (key) => {
   const item=ITEMS[key],area=document.getElementById('shop-area');
   if(ITEM_LIMITS[key]){
     const count=area.querySelectorAll(`.placed-item[data-type="${key}"]`).length;
     if(count>=ITEM_LIMITS[key])return;
   }
+  setTimeout(updatePanelLimits,0);
   const div=document.createElement('div');div.className='placed-item';div.dataset.type=key;
   div.style.left=(180+Math.random()*380)+'px';div.style.top=(210+Math.random()*180)+'px';
   const c=document.createElement('canvas');c.width=item.w+2;c.height=item.h+2;
@@ -882,8 +896,8 @@ const placeItem = (key) => {
   c.style.imageRendering='pixelated';
   item.draw(c.getContext('2d'));div.appendChild(c);
   const del=document.createElement('button');del.className='del-btn';del.textContent='x';
-  del.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);});
-  del.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);});
+  del.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);updatePanelLimits();});
+  del.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);updatePanelLimits();});
   div.appendChild(del);
   let dragging=false,offX=0,offY=0;
   const dw=item.w+2,dh=item.h+2;
