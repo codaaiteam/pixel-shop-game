@@ -249,6 +249,40 @@ body{
 .placed-item.highlight-target{box-shadow:0 0 12px 4px #f8e888;z-index:15}
 .clothing-on-rack{position:absolute;pointer-events:none;image-rendering:pixelated}
 .clothing-on-shelf{position:absolute;pointer-events:none;image-rendering:pixelated}
+
+/* DAY SIMULATION */
+#start-day-btn{
+  display:none;font-size:7px;padding:6px 14px;
+  background:linear-gradient(180deg,#48a848 0%,#308830 100%);
+  color:#f8e8c0;text-shadow:1px 1px #184818;
+}
+#done-placing-btn{
+  display:none;font-size:6px;padding:4px 10px;
+  background:linear-gradient(180deg,#c84040 0%,#a03030 100%);
+  color:#f8e8c0;text-shadow:1px 1px #601818;
+}
+#money-tab{
+  position:absolute;top:50px;left:0;z-index:40;
+  background:#c8a065;border:3px solid #5a3a18;border-left:none;
+  padding:6px 10px;display:none;
+  box-shadow:inset 0 0 0 1px #e8c888,2px 2px 4px rgba(0,0,0,0.3);
+  font-family:'Press Start 2P',monospace;font-size:7px;color:#3a2210;
+}
+.customer-sprite{position:absolute;z-index:7;image-rendering:pixelated;pointer-events:none}
+.customer-sprite canvas{image-rendering:pixelated}
+#sold-out-overlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.75);z-index:60;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#sold-out-overlay h1{
+  color:#f8d828;font-family:'Press Start 2P',monospace;font-size:20px;
+  text-shadow:2px 2px #5a3a18;
+}
+#sold-out-overlay p{
+  color:#f8e8c0;font-family:'Press Start 2P',monospace;font-size:9px;
+  text-shadow:1px 1px #5a3a18;
+}
 </style>
 </head>
 <body>
@@ -282,9 +316,11 @@ body{
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button></div></div>
+    <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
+    <div id="money-tab">$0</div>
+    <div id="sold-out-overlay"><h1>SOLD OUT!</h1><p>All clothes have been sold!</p></div>
     <div id="dark-overlay"></div>
     <div id="shop-tab"><span class="notif"></span><canvas id="shop-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">SHOP</span></div>
     <div id="inventory-menu">
@@ -1434,6 +1470,224 @@ document.getElementById('shop-tab').onclick=()=>{
     initInventoryMenu();
   }
 };
+
+// ============ DONE PLACING → START DAY ============
+document.getElementById('done-placing-btn').onclick=()=>{
+  // Check if any clothing placed on furniture
+  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf');
+  if(placed.length===0)return;
+  document.getElementById('done-placing-btn').style.display='none';
+  document.getElementById('design-btn').style.display='none';
+  document.getElementById('shop-tab').style.display='none';
+  document.getElementById('inventory-menu').style.display='none';
+  document.getElementById('start-day-btn').style.display='';
+};
+
+// ============ DAY SIMULATION ============
+let money=0,dayRunning=false,customers=[],clothingOnDisplay=[];
+
+const CUST_SKINS=['#f8d8b0','#e8c090','#d0a070','#b88050','#986838','#784828'];
+const CUST_SHIRTS=['#c83838','#4070b0','#488848','#d08828','#785098','#385058','#c88828','#b04040'];
+const CUST_PANTS=['#384060','#283058','#402860','#3a2010','#202020'];
+const CUST_HAIRS=['#402818','#884828','#d8a830','#181010','#a83020','#e8d8c8'];
+
+const buildCustomerSprite = (seed) => {
+  const pick=(arr)=>arr[Math.floor(seed*arr.length)%arr.length];
+  const sk=pick(CUST_SKINS),sh=pick(CUST_SHIRTS),pt=pick(CUST_PANTS),hc=pick(CUST_HAIRS);
+  const p={skin:SKINS.indexOf(sk)>=0?SKINS.indexOf(sk):0,eyes:Math.floor(seed*6)%6,
+    hair:Math.floor(seed*100)%6,hairColor:HAIR_COLORS.indexOf(hc)>=0?HAIR_COLORS.indexOf(hc):0,
+    shirtStyle:0,shirtColor:SHIRT_COLORS.indexOf(sh)>=0?SHIRT_COLORS.indexOf(sh):0,
+    pants:PANTS_COLORS.indexOf(pt)>=0?PANTS_COLORS.indexOf(pt):0,accessory:Math.floor(seed*1000)%3,name:'Customer'};
+  return p;
+};
+
+const getClothingOnDisplay = () => {
+  const items=[];
+  document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').forEach(el=>{
+    const parent=el.closest('.placed-item');
+    if(parent){
+      const pr=parent.getBoundingClientRect();
+      const area=document.getElementById('shop-area');
+      const ar=area.getBoundingClientRect();
+      items.push({el,x:pr.left-ar.left+pr.width/2,y:pr.top-ar.top+pr.height/2,parent});
+    }
+  });
+  return items;
+};
+
+const getRegisterPos = () => {
+  const reg=document.querySelector('.placed-item[data-type="register"]');
+  if(!reg)return{x:400,y:300};
+  const area=document.getElementById('shop-area');
+  const ar=area.getBoundingClientRect();
+  const rr=reg.getBoundingClientRect();
+  return{x:rr.left-ar.left+rr.width/2,y:rr.top-ar.top+rr.height/2};
+};
+
+const DOOR_X=644,DOOR_Y=220;// door entry position in shop area
+
+const spawnCustomer = () => {
+  const seed=Math.random();
+  const custData=buildCustomerSprite(seed);
+  const div=document.createElement('div');
+  div.className='customer-sprite';
+  const c=document.createElement('canvas');c.width=32;c.height=32;
+  c.style.width='48px';c.style.height='48px';
+  drawChar(c,custData);
+  div.appendChild(c);
+  div.style.left=DOOR_X+'px';div.style.top=DOOR_Y+'px';
+  document.getElementById('shop-area').appendChild(div);
+  return{el:div,canvas:c,data:custData,x:DOOR_X,y:DOOR_Y,
+    state:'walking_to_clothing',targetClothing:null,frame:0,timer:0,
+    targetX:0,targetY:0,carrying:null};
+};
+
+const moveToward = (cust,tx,ty,speed) => {
+  const dx=tx-cust.x,dy=ty-cust.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist<speed)return true;
+  cust.x+=dx/dist*speed;
+  cust.y+=dy/dist*speed;
+  // Walk direction
+  const dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
+  cust.timer++;
+  if(cust.timer>=8){cust.timer=0;cust.frame=(cust.frame+1)%4;}
+  drawChar(cust.canvas,cust.data,cust.frame,dir);
+  cust.el.style.left=Math.round(cust.x)+'px';
+  cust.el.style.top=Math.round(cust.y)+'px';
+  return false;
+};
+
+const updateMoney = (amt) => {
+  money+=amt;
+  document.getElementById('money-tab').textContent='$'+money;
+};
+
+const dayLoop = () => {
+  if(!dayRunning)return;
+  const clothing=getClothingOnDisplay();
+  const regPos=getRegisterPos();
+  const playerNearReg=Math.abs(playerPos.x-regPos.x)<60&&Math.abs(playerPos.y-regPos.y)<60;
+
+  for(let i=customers.length-1;i>=0;i--){
+    const cust=customers[i];
+
+    if(cust.state==='walking_to_clothing'){
+      if(!cust.targetClothing){
+        // Pick a random clothing item still on display
+        const avail=clothing.filter(c=>!customers.some(cc=>cc!==cust&&cc.targetClothing===c.el));
+        if(avail.length===0){
+          // No clothing available, leave
+          cust.state='leaving';
+          continue;
+        }
+        const pick=avail[Math.floor(Math.random()*avail.length)];
+        cust.targetClothing=pick.el;
+        cust.targetX=pick.x;
+        cust.targetY=pick.y+30;
+      }
+      if(moveToward(cust,cust.targetX,cust.targetY,1.5)){
+        // Arrived at clothing - pick it up
+        cust.state='picking_up';
+        cust.pickTimer=40;
+      }
+    }
+    else if(cust.state==='picking_up'){
+      cust.pickTimer--;
+      if(cust.pickTimer<=0){
+        // Remove clothing from display
+        if(cust.targetClothing&&cust.targetClothing.parentElement){
+          cust.carrying=true;
+          cust.targetClothing.parentElement.removeChild(cust.targetClothing);
+        }
+        cust.state='walking_to_register';
+      }
+    }
+    else if(cust.state==='walking_to_register'){
+      if(moveToward(cust,regPos.x,regPos.y+30,1.5)){
+        cust.state='waiting_to_pay';
+      }
+    }
+    else if(cust.state==='waiting_to_pay'){
+      // Draw standing still
+      drawChar(cust.canvas,cust.data,0,'down');
+      if(playerNearReg){
+        // Pay!
+        updateMoney(10);
+        cust.state='leaving';
+      }
+    }
+    else if(cust.state==='leaving'){
+      if(moveToward(cust,DOOR_X,DOOR_Y,2)){
+        // Remove customer
+        cust.el.parentElement.removeChild(cust.el);
+        customers.splice(i,1);
+      }
+    }
+  }
+
+  // Check if all clothing gone and no customers left
+  const remainingClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const activeCust=customers.filter(c=>c.state!=='leaving').length;
+  if(remainingClothing===0&&activeCust===0&&customers.length===0){
+    dayRunning=false;
+    document.getElementById('sold-out-overlay').style.display='flex';
+    return;
+  }
+
+  requestAnimationFrame(dayLoop);
+};
+
+const startDay = () => {
+  dayRunning=true;
+  document.getElementById('start-day-btn').style.display='none';
+  document.getElementById('money-tab').style.display='block';
+  document.getElementById('money-tab').textContent='$'+money;
+
+  // Count total clothing on display
+  const totalClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  let spawned=0;
+
+  // Spawn customers one by one with delays
+  const spawnNext = () => {
+    if(!dayRunning)return;
+    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+    const busyCust=customers.filter(c=>c.targetClothing&&c.state!=='leaving').length;
+    if(spawned<totalClothing&&remaining>0||busyCust<remaining){
+      if(remaining>0&&customers.filter(c=>c.state!=='leaving').length<3){
+        customers.push(spawnCustomer());
+        spawned++;
+      }
+      setTimeout(spawnNext,2000+Math.random()*2000);
+    }
+  };
+
+  // Start first customer after brief delay
+  setTimeout(()=>{
+    customers.push(spawnCustomer());
+    spawned++;
+    setTimeout(spawnNext,3000);
+  },1000);
+
+  requestAnimationFrame(dayLoop);
+};
+
+document.getElementById('start-day-btn').onclick=()=>{
+  startDay();
+};
+
+// Show done-placing button when clothing is placed and inventory is open
+const origPlaceClothing=placeClothingOnFurniture;
+// We need to show "Done" button after placing first clothing
+const checkShowDonePlacing = () => {
+  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  if(placed>0&&document.getElementById('start-day-btn').style.display==='none'){
+    document.getElementById('done-placing-btn').style.display='';
+  }
+};
+// Observe shop area for clothing additions
+const shopAreaObserver=new MutationObserver(()=>{checkShowDonePlacing();});
+shopAreaObserver.observe(document.getElementById('shop-area'),{childList:true,subtree:true});
 
 initCharCreate();
 </script>
