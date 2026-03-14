@@ -1949,7 +1949,7 @@ document.getElementById('done-placing-btn').onclick=()=>{
 };
 
 // ============ DAY SIMULATION ============
-let money=0,dayRunning=false,customers=[],clothingOnDisplay=[];
+let money=0,dayRunning=false,customers=[],clothingOnDisplay=[],lastPayTime=0;
 
 const CUST_SKINS=['#f8d8b0','#e8c090','#d0a070','#b88050','#986838','#784828'];
 const CUST_SHIRTS=['#c83838','#4070b0','#488848','#d08828','#785098','#385058','#c88828','#b04040'];
@@ -2117,8 +2117,9 @@ const dayLoop = () => {
       } else {
         drawChar(cust.canvas,cust.data,0,'up');
       }
-      // Only first in line can pay
-      if(playerNearReg&&cust._queuePos===0){
+      // Only first in line can pay, one at a time with cooldown
+      if(playerNearReg&&cust._queuePos===0&&Date.now()-lastPayTime>600){
+        lastPayTime=Date.now();
         updateMoney(10,cust.x,cust.y-20);
         cust.state='leaving';
       }
