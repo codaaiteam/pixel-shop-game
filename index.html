@@ -103,6 +103,36 @@ body{
 #transition-text{color:#f8e8c0;font-size:14px;text-shadow:2px 2px #5a3a18;animation:pulse 1.5s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 
+/* CUSTOMIZE ROOM */
+#room-customize{
+  background:#b08848;padding:8px;
+  justify-content:flex-start;gap:8px;overflow-y:auto;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+}
+#room-customize h2{color:#3a2210;font-size:11px;margin:2px 0;text-shadow:1px 1px #d8b878}
+#room-preview{
+  width:400px;height:200px;border:3px solid #5a3a18;
+  box-shadow:inset 0 0 0 1px #e8c888;margin:0 auto;
+}
+#room-preview canvas{width:400px;height:200px;image-rendering:pixelated}
+.room-options{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.room-section{
+  background:#c8a065;border:2px solid #5a3a18;padding:6px 10px;
+  box-shadow:inset 0 0 0 1px #e8c888;text-align:center;
+}
+.room-section label{color:#3a2210;font-size:6px;display:block;margin-bottom:4px;text-shadow:1px 1px #d8b878}
+.room-color-row{display:flex;gap:3px;justify-content:center;flex-wrap:wrap}
+.room-color-btn{width:24px;height:24px;border:2px solid #5a3a18;cursor:pointer;padding:0}
+.room-color-btn.selected{border-color:#f8e8c0;box-shadow:0 0 0 1px #5a3a18}
+.room-style-btn{
+  background:linear-gradient(180deg,#d8b878 0%,#b89058 100%);
+  border:2px solid #5a3a18;color:#3a2210;
+  padding:4px 8px;font-family:'Press Start 2P',monospace;font-size:5px;
+  cursor:pointer;box-shadow:inset 0 0 0 1px #e8d098;
+}
+.room-style-btn:hover{background:linear-gradient(180deg,#e8c888 0%,#c8a068 100%)}
+.room-style-btn.selected{background:#a87838;color:#f8e8c0}
+
 /* SHOP */
 #shop-screen{background:#3a2810;flex-direction:column}
 #shop-header{
@@ -403,6 +433,17 @@ body{
     <div id="dialog-box"><div id="cutscene-text"></div><button id="dialog-next">NEXT</button></div>
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
+  <div id="room-customize" class="screen">
+    <h2>CUSTOMIZE YOUR SHOP</h2>
+    <div id="room-preview"><canvas id="room-preview-canvas" width="400" height="200"></canvas></div>
+    <div class="room-options">
+      <div class="room-section"><label>WALL COLOR</label><div class="room-color-row" id="wall-colors"></div></div>
+      <div class="room-section"><label>WALL STYLE</label><div class="room-color-row" id="wall-styles"></div></div>
+      <div class="room-section"><label>FLOOR COLOR</label><div class="room-color-row" id="floor-colors"></div></div>
+      <div class="room-section"><label>FLOOR STYLE</label><div class="room-color-row" id="floor-styles"></div></div>
+    </div>
+    <button id="room-done-btn" class="sdv-btn" style="font-size:8px;padding:8px 20px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818;margin-top:4px">DONE</button>
+  </div>
   <div id="shop-screen" class="screen">
     <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="redecorate-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
@@ -1037,8 +1078,127 @@ const showDialog = () => {
 };
 document.getElementById('dialog-next').onclick=()=>{
   dialogIdx++;
-  if(dialogIdx>=DIALOGS.length){showScreen('transition');setTimeout(startShop,2500);}
+  if(dialogIdx>=DIALOGS.length){showScreen('transition');setTimeout(()=>{showScreen('room-customize');initRoomCustomize();},2500);}
   else showDialog();
+};
+
+// ============ ROOM CUSTOMIZATION ============
+const WALL_COLORS=[
+  {name:'Classic',base:[178,142,88],side:'#a88848',sideD:'#988040'},
+  {name:'Blue',base:[120,150,180],side:'#6888a8',sideD:'#587898'},
+  {name:'Green',base:[140,168,110],side:'#78a858',sideD:'#689848'},
+  {name:'Pink',base:[190,148,148],side:'#b88888',sideD:'#a87878'},
+  {name:'Gray',base:[158,158,158],side:'#989898',sideD:'#888888'},
+  {name:'Cream',base:[195,178,140],side:'#c0a870',sideD:'#b09860'},
+  {name:'Lavender',base:[168,148,188],side:'#a088b0',sideD:'#9078a0'},
+  {name:'Tan',base:[188,162,120],side:'#b89868',sideD:'#a88858'},
+];
+const WALL_STYLES=['Planks','Brick','Smooth'];
+const FLOOR_COLORS=[
+  {name:'Oak',base:[152,116,68]},
+  {name:'Dark',base:[100,72,44]},
+  {name:'Light',base:[185,155,110]},
+  {name:'Cherry',base:[140,80,60]},
+  {name:'Gray',base:[140,140,135]},
+  {name:'White',base:[200,195,185]},
+  {name:'Blue Tile',base:[100,130,160]},
+  {name:'Green',base:[110,140,90]},
+];
+const FLOOR_STYLES=['Wood','Tile','Stone'];
+
+let roomStyle={wallColor:0,wallStyle:0,floorColor:0,floorStyle:0};
+
+const initRoomCustomize = () => {
+  const wcRow=document.getElementById('wall-colors');wcRow.innerHTML='';
+  WALL_COLORS.forEach((wc,i)=>{
+    const btn=document.createElement('button');btn.className='room-color-btn'+(roomStyle.wallColor===i?' selected':'');
+    const [r,g,b]=wc.base;btn.style.background=`rgb(${r},${g},${b})`;
+    btn.onclick=()=>{roomStyle.wallColor=i;initRoomCustomize();};
+    wcRow.appendChild(btn);
+  });
+  const wsRow=document.getElementById('wall-styles');wsRow.innerHTML='';
+  WALL_STYLES.forEach((ws,i)=>{
+    const btn=document.createElement('button');btn.className='room-style-btn'+(roomStyle.wallStyle===i?' selected':'');
+    btn.textContent=ws;btn.onclick=()=>{roomStyle.wallStyle=i;initRoomCustomize();};
+    wsRow.appendChild(btn);
+  });
+  const fcRow=document.getElementById('floor-colors');fcRow.innerHTML='';
+  FLOOR_COLORS.forEach((fc,i)=>{
+    const btn=document.createElement('button');btn.className='room-color-btn'+(roomStyle.floorColor===i?' selected':'');
+    const [r,g,b]=fc.base;btn.style.background=`rgb(${r},${g},${b})`;
+    btn.onclick=()=>{roomStyle.floorColor=i;initRoomCustomize();};
+    fcRow.appendChild(btn);
+  });
+  const fsRow=document.getElementById('floor-styles');fsRow.innerHTML='';
+  FLOOR_STYLES.forEach((fs,i)=>{
+    const btn=document.createElement('button');btn.className='room-style-btn'+(roomStyle.floorStyle===i?' selected':'');
+    btn.textContent=fs;btn.onclick=()=>{roomStyle.floorStyle=i;initRoomCustomize();};
+    fsRow.appendChild(btn);
+  });
+  // Draw preview
+  drawRoomPreview();
+};
+
+const drawRoomPreview = () => {
+  const canvas=document.getElementById('room-preview-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=400,H=200;
+  ctx.clearRect(0,0,W,H);
+  const wc=WALL_COLORS[roomStyle.wallColor];
+  const fc=FLOOR_COLORS[roomStyle.floorColor];
+  const [wr,wg,wb]=wc.base;
+  const [fr,fg,fb]=fc.base;
+  // Back wall
+  for(let y=0;y<95;y+=8){
+    const v=Math.sin(y*0.3)*8;
+    if(roomStyle.wallStyle===1){// Brick
+      for(let x=0;x<W;x+=20){
+        const off=(Math.floor(y/8)%2)*10;
+        rect(ctx,x+off,y,18,6,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+        rect(ctx,x+off,y,18,2,`rgb(${wr+v+12|0},${wg+v+12|0},${wb+v+12|0})`);
+      }
+    } else if(roomStyle.wallStyle===2){// Smooth
+      rect(ctx,0,y,W,8,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+    } else {// Planks
+      rect(ctx,0,y,W,7,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+      rect(ctx,0,y,W,2,`rgb(${wr+v+12|0},${wg+v+12|0},${wb+v+12|0})`);
+      rect(ctx,0,y+7,W,1,'rgba(0,0,0,0.1)');
+    }
+  }
+  // Side walls
+  ctx.fillStyle=wc.side;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(32,6);ctx.lineTo(32,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-32,6);ctx.lineTo(W-32,H);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+  // Floor
+  const fY=98;
+  for(let y=fY;y<H;y+=6){
+    const off=(Math.floor((y-fY)/6)%2)*18;
+    if(roomStyle.floorStyle===1){// Tile
+      for(let x=32;x<W-32;x+=20){
+        const v=((x*7+y*3)%20)-10;
+        rect(ctx,Math.max(32,x),y,18,5,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(32,x),y,18,1,`rgb(${fr+v+10|0},${fg+v+10|0},${fb+v+10|0})`);
+      }
+    } else if(roomStyle.floorStyle===2){// Stone
+      for(let x=32-off;x<W-32;x+=24){
+        const v=((x*3+y*7)%16)-8;
+        rect(ctx,Math.max(32,x),y,22,5,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(32,x),y,22,1,`rgb(${fr+v+8|0},${fg+v+8|0},${fb+v+8|0})`);
+      }
+    } else {// Wood
+      for(let x=32-off;x<W-32;x+=35){
+        const v=((x*7+y*3)%20)-10;
+        rect(ctx,Math.max(32,x),y,34,5,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(32,x),y,34,1,`rgb(${fr+v+10|0},${fg+v+10|0},${fb+v+10|0})`);
+      }
+    }
+  }
+  // Molding
+  rect(ctx,32,94,W-64,2,'#b89860');rect(ctx,32,96,W-64,3,'#8a6830');
+};
+
+document.getElementById('room-done-btn').onclick=()=>{
+  startShop();
 };
 
 // ============ SHOP ROOM (full resolution) ============
@@ -1048,32 +1208,62 @@ const drawRoom = () => {
   const W=800,H=490;
 
   // === BACK WALL ===
+  const wc=WALL_COLORS[roomStyle.wallColor];
+  const [wr,wg,wb]=wc.base;
   for(let y=0;y<190;y+=16){
     const v=Math.sin(y*0.3)*8;
-    rect(ctx,0,y,W,14,`rgb(${178+v|0},${142+v|0},${88+v|0})`);
-    rect(ctx,0,y,W,4,`rgb(${190+v|0},${154+v|0},${100+v|0})`);
-    rect(ctx,0,y+14,W,2,'rgba(0,0,0,0.1)');
-    if(y%32===0)for(let x=50;x<W;x+=120){rect(ctx,x,y+6,4,4,'#887858');rect(ctx,x,y+6,2,2,'#a89868');}
+    if(roomStyle.wallStyle===1){// Brick
+      for(let x=0;x<W;x+=40){
+        const off=(Math.floor(y/16)%2)*20;
+        rect(ctx,x+off,y,36,12,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+        rect(ctx,x+off,y,36,3,`rgb(${wr+v+12|0},${wg+v+12|0},${wb+v+12|0})`);
+      }
+    } else if(roomStyle.wallStyle===2){// Smooth
+      rect(ctx,0,y,W,16,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+    } else {// Planks
+      rect(ctx,0,y,W,14,`rgb(${wr+v|0},${wg+v|0},${wb+v|0})`);
+      rect(ctx,0,y,W,4,`rgb(${wr+v+12|0},${wg+v+12|0},${wb+v+12|0})`);
+      rect(ctx,0,y+14,W,2,'rgba(0,0,0,0.1)');
+      if(y%32===0)for(let x=50;x<W;x+=120){rect(ctx,x,y+6,4,4,`rgb(${wr-30|0},${wg-20|0},${wb-10|0})`);rect(ctx,x,y+6,2,2,`rgb(${wr|0},${wg|0},${wb|0})`);}
+    }
   }
   // === LEFT WALL ===
-  ctx.fillStyle='#a88848';
+  ctx.fillStyle=wc.side;
   ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(65,12);ctx.lineTo(65,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#988040';
+  ctx.fillStyle=wc.sideD;
   ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(32,6);ctx.lineTo(32,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
   // === RIGHT WALL ===
-  ctx.fillStyle='#a88848';
+  ctx.fillStyle=wc.side;
   ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-65,12);ctx.lineTo(W-65,H);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#988040';
+  ctx.fillStyle=wc.sideD;
   ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-32,6);ctx.lineTo(W-32,H);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
   // === FLOOR ===
+  const fc=FLOOR_COLORS[roomStyle.floorColor];
+  const [fr,fg,fb]=fc.base;
   const fY=195;
   for(let y=fY;y<H;y+=12){
     const off=(Math.floor((y-fY)/12)%2)*35;
-    for(let x=65-off;x<W-65;x+=70){
-      const v=((x*7+y*3)%20)-10;
-      rect(ctx,Math.max(65,x),y,68,10,`rgb(${152+v|0},${116+v|0},${68+v|0})`);
-      rect(ctx,Math.max(65,x),y,68,2,`rgb(${162+v|0},${126+v|0},${78+v|0})`);
-      rect(ctx,Math.max(65,x),y+10,68,2,'rgba(0,0,0,0.06)');
+    if(roomStyle.floorStyle===1){// Tile
+      for(let x=65-off;x<W-65;x+=40){
+        const v=((x*7+y*3)%20)-10;
+        rect(ctx,Math.max(65,x),y,38,10,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(65,x),y,38,2,`rgb(${fr+v+10|0},${fg+v+10|0},${fb+v+10|0})`);
+        rect(ctx,Math.max(65,x),y+10,38,2,'rgba(0,0,0,0.06)');
+      }
+    } else if(roomStyle.floorStyle===2){// Stone
+      for(let x=65-off;x<W-65;x+=50){
+        const v=((x*3+y*7)%16)-8;
+        rect(ctx,Math.max(65,x),y,48,10,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(65,x),y,48,2,`rgb(${fr+v+8|0},${fg+v+8|0},${fb+v+8|0})`);
+        rect(ctx,Math.max(65,x),y+10,48,2,'rgba(0,0,0,0.04)');
+      }
+    } else {// Wood
+      for(let x=65-off;x<W-65;x+=70){
+        const v=((x*7+y*3)%20)-10;
+        rect(ctx,Math.max(65,x),y,68,10,`rgb(${fr+v|0},${fg+v|0},${fb+v|0})`);
+        rect(ctx,Math.max(65,x),y,68,2,`rgb(${fr+v+10|0},${fg+v+10|0},${fb+v+10|0})`);
+        rect(ctx,Math.max(65,x),y+10,68,2,'rgba(0,0,0,0.06)');
+      }
     }
   }
   rect(ctx,65,fY,W-130,10,'rgba(0,0,0,0.08)');
@@ -1207,10 +1397,10 @@ document.addEventListener('keyup',e=>{keys[e.key]=false;});
 const gameLoop = () => {
   if(!document.getElementById('shop-screen').classList.contains('active'))return;
   const speed=3;let moving=false;
-  if(keys['ArrowUp']||keys['w']){playerPos.y=Math.max(30,playerPos.y-speed);walkDir='up';moving=true;}
-  if(keys['ArrowDown']||keys['s']){playerPos.y=Math.min(430,playerPos.y+speed);walkDir='down';moving=true;}
-  if(keys['ArrowLeft']||keys['a']){playerPos.x=Math.max(70,playerPos.x-speed);walkDir='left';moving=true;}
-  if(keys['ArrowRight']||keys['d']){playerPos.x=Math.min(730,playerPos.x+speed);walkDir='right';moving=true;}
+  if(keys['ArrowUp']||keys['w']){playerPos.y=Math.max(140,playerPos.y-speed);walkDir='up';moving=true;}
+  if(keys['ArrowDown']||keys['s']){playerPos.y=Math.min(420,playerPos.y+speed);walkDir='down';moving=true;}
+  if(keys['ArrowLeft']||keys['a']){playerPos.x=Math.max(75,playerPos.x-speed);walkDir='left';moving=true;}
+  if(keys['ArrowRight']||keys['d']){playerPos.x=Math.min(670,playerPos.x+speed);walkDir='right';moving=true;}
   if(moving){walkTimer++;if(walkTimer>=WALK_SPEED){walkTimer=0;walkFrame=(walkFrame+1)%4;}}
   else{walkFrame=0;walkTimer=0;}
   const sprite=document.getElementById('player-sprite');
