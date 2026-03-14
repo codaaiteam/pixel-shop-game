@@ -1606,14 +1606,15 @@ document.getElementById('clothing-done').onclick=()=>{
   requestAnimationFrame(gameLoop);
   // Show shop tab with notification
   showShopTab(true);
-  // Show dark overlay to guide player to shop tab
-  const overlay=document.getElementById('dark-overlay');
-  overlay.style.display='block';
-  // Dismiss overlay when clicking anywhere
-  const dismiss=()=>{overlay.style.display='none';overlay.removeEventListener('click',dismiss);};
-  overlay.addEventListener('click',dismiss);
-  // Auto-dismiss after 3 seconds
-  setTimeout(dismiss,3000);
+  // Show dark overlay only the first time to teach player about the shop tab
+  if(!window._shopTabTutorialDone){
+    window._shopTabTutorialDone=true;
+    const overlay=document.getElementById('dark-overlay');
+    overlay.style.display='block';
+    const dismiss=()=>{overlay.style.display='none';overlay.removeEventListener('click',dismiss);};
+    overlay.addEventListener('click',dismiss);
+    setTimeout(dismiss,3000);
+  }
   updateDesignBtn();
 };
 
