@@ -1545,6 +1545,7 @@ document.getElementById('done-decorating').onclick=()=>{
   furnitureLocked=true;
   document.getElementById('shop-area').classList.add('furniture-locked');
   document.getElementById('design-btn').style.display='inline-block';
+  document.getElementById('start-day-btn').style.display='inline-block';
   document.getElementById('shop-title').textContent='YOUR SHOP';
   document.getElementById('shop-hint').textContent='Design clothing, then place it on shelves & racks';
   showScreen('clothing-screen');
@@ -1597,13 +1598,10 @@ document.getElementById('shop-tab').onclick=()=>{
 
 // ============ DONE PLACING → START DAY ============
 document.getElementById('done-placing-btn').onclick=()=>{
-  // Check if any clothing placed on furniture
   const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf');
   if(placed.length===0)return;
   document.getElementById('done-placing-btn').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
-  document.getElementById('start-day-btn').style.display='inline-block';
-  document.getElementById('shop-hint').textContent='Ready to open for business!';
 };
 
 // ============ DAY SIMULATION ============
@@ -1833,6 +1831,7 @@ document.getElementById('sold-out-ok').onclick=()=>{
   document.getElementById('sold-out-overlay').style.display='none';
   // Let player design and place more clothing
   document.getElementById('design-btn').style.display='inline-block';
+  document.getElementById('start-day-btn').style.display='inline-block';
   showShopTab(false);
   document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
   requestAnimationFrame(gameLoop);
