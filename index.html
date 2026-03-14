@@ -123,6 +123,8 @@ body{
   line-height:1;z-index:30;font-family:sans-serif;
 }
 .placed-item:hover .del-btn{display:flex}
+.furniture-locked .placed-item .del-btn{display:none!important}
+.furniture-locked .placed-item{cursor:default!important}
 #item-panel{
   background:#c8a065;width:100%;padding:4px 6px;
   display:flex;gap:4px;justify-content:center;
@@ -977,7 +979,7 @@ const drawRoom = () => {
 };
 
 // ============ SHOP ============
-let playerPos={x:370,y:320},keys={};
+let playerPos={x:370,y:320},keys={},furnitureLocked=false;
 
 const startShop = () => {
   showScreen('shop-screen');
@@ -1032,12 +1034,12 @@ const placeItem = (key) => {
   c.style.imageRendering='pixelated';
   item.draw(c.getContext('2d'));div.appendChild(c);
   const del=document.createElement('button');del.className='del-btn';del.textContent='x';
-  del.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);updatePanelLimits();});
-  del.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();area.removeChild(div);updatePanelLimits();});
+  del.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();if(furnitureLocked)return;area.removeChild(div);updatePanelLimits();});
+  del.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();if(furnitureLocked)return;area.removeChild(div);updatePanelLimits();});
   div.appendChild(del);
   let dragging=false,offX=0,offY=0;
   const dw=item.w+2,dh=item.h+2;
-  const startDrag = (cx,cy) => {dragging=true;div.classList.add('dragging');const r=div.getBoundingClientRect();offX=cx-r.left;offY=cy-r.top;};
+  const startDrag = (cx,cy) => {if(furnitureLocked)return;dragging=true;div.classList.add('dragging');const r=div.getBoundingClientRect();offX=cx-r.left;offY=cy-r.top;};
   const moveDrag = (cx,cy) => {if(!dragging)return;const ar=area.getBoundingClientRect();let nx=cx-ar.left-offX,ny=cy-ar.top-offY;nx=Math.max(0,Math.min(ar.width-dw,nx));ny=Math.max(0,Math.min(ar.height-dh,ny));div.style.left=nx+'px';div.style.top=ny+'px';};
   const endDrag = () => {if(dragging){dragging=false;div.classList.remove('dragging');}};
   div.addEventListener('mousedown',e=>{if(e.target===del)return;e.preventDefault();startDrag(e.clientX,e.clientY);});
@@ -1368,7 +1370,15 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
     el.style.left=(10+shelfCol*16)+'px';
     el.style.top=(8+shelfRow*18)+'px';
   }
-  target.querySelector('canvas').parentElement.appendChild(el);
+  // Click to remove clothing back to inventory
+  el.style.cursor='pointer';el.style.pointerEvents='auto';
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    inventory.push(item);
+    el.parentElement.removeChild(el);
+    if(document.getElementById('inventory-menu').style.display==='flex')initInventoryMenu();
+  });
+  target.appendChild(el);
 
   // Remove from inventory
   inventory.splice(invIdx,1);
@@ -1379,12 +1389,15 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
 document.getElementById('done-decorating').onclick=()=>{
   document.getElementById('item-panel').style.display='none';
   document.getElementById('done-decorating').style.display='none';
+  furnitureLocked=true;
+  document.getElementById('shop-area').classList.add('furniture-locked');
   showScreen('clothing-screen');
   initClothingScreen();
 };
 
 // Done designing clothing -> back to shop with inventory
 document.getElementById('clothing-done').onclick=()=>{
+  if(inventory.length>=5)return;
   // Save designed clothing to inventory
   inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
   clothingState={type:'tshirt',color:0,graphic:null};
