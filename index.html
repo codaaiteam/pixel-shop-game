@@ -286,6 +286,11 @@ body{
   background:linear-gradient(180deg,#48a848 0%,#308830 100%);
   color:#f8e8c0;text-shadow:1px 1px #184818;
 }
+#end-day-btn{
+  display:none;font-size:6px;padding:4px 10px;
+  background:linear-gradient(180deg,#c84040 0%,#a03030 100%);
+  color:#f8e8c0;text-shadow:1px 1px #601818;
+}
 #done-placing-btn{
   display:none;font-size:6px;padding:4px 10px;
   background:linear-gradient(180deg,#c84040 0%,#a03030 100%);
@@ -566,7 +571,7 @@ body{
     <button id="room-done-btn" class="sdv-btn" style="font-size:8px;padding:8px 20px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818;margin-top:4px">DONE</button>
   </div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="redecorate-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
+    <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="redecorate-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button><button class="sdv-btn" id="end-day-btn">END DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
     <div id="shop-name-display"></div>
@@ -2217,7 +2222,11 @@ const dayLoop = () => {
   const activeCust=customers.filter(c=>c.state!=='leaving').length;
   if(remainingClothing===0&&activeCust===0&&customers.length===0){
     dayRunning=false;
-    document.getElementById('sold-out-overlay').style.display='flex';
+    document.getElementById('end-day-btn').style.display='none';
+    const ov=document.getElementById('sold-out-overlay');
+    ov.querySelector('h1').textContent='SOLD OUT!';
+    ov.querySelector('p').textContent='All clothes have been sold!';
+    ov.style.display='flex';
     return;
   }
 
@@ -2232,6 +2241,7 @@ const startDay = () => {
   document.getElementById('shop-tab').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
   document.getElementById('shop-hint').textContent='Stand near the register to serve customers!';
+  document.getElementById('end-day-btn').style.display='inline-block';
   document.getElementById('money-tab').style.display='block';
   document.getElementById('money-tab').textContent='$'+money;
 
@@ -2877,8 +2887,22 @@ const shouldSpawnAlyssa = () => {
   return dayCount>=2&&dayCount%2===0&&!customers.some(c=>c.isAlyssa);
 };
 
-// Patch: after first customer spawns on even days, also spawn Alyssa
-const origSpawnCustomer=spawnCustomer;
+// End Day button
+const endDay = () => {
+  dayRunning=false;
+  document.getElementById('end-day-btn').style.display='none';
+  // Remove all remaining customers
+  customers.forEach(c=>{if(c.el.parentElement)c.el.parentElement.removeChild(c.el);});
+  customers=[];
+  // Show day ended message
+  const overlay=document.getElementById('sold-out-overlay');
+  overlay.querySelector('h1').textContent='DAY OVER!';
+  const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  overlay.querySelector('p').textContent=remaining>0?remaining+' item(s) left unsold.':'All clothes sold!';
+  overlay.style.display='flex';
+};
+
+document.getElementById('end-day-btn').onclick=()=>{endDay();};
 
 initCharCreate();
 </script>
