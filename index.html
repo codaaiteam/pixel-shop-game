@@ -1726,6 +1726,11 @@ const dayLoop = () => {
   const regPos=getRegisterPos();
   const playerNearReg=Math.abs(playerPos.x-regPos.x)<60&&Math.abs(playerPos.y-regPos.y)<60;
 
+  // Assign queue positions for customers waiting/walking to register
+  const queueCusts=customers.filter(c=>c.state==='walking_to_register'||c.state==='waiting_to_pay');
+  queueCusts.sort((a,b)=>(a._queueTime||0)-(b._queueTime||0));
+  queueCusts.forEach((c,i)=>{c._queuePos=i;});
+
   for(let i=customers.length-1;i>=0;i--){
     const cust=customers[i];
 
@@ -1758,18 +1763,26 @@ const dayLoop = () => {
           cust.targetClothing.parentElement.removeChild(cust.targetClothing);
         }
         cust.state='walking_to_register';
+        cust._queueTime=Date.now();
       }
     }
     else if(cust.state==='walking_to_register'){
-      if(moveToward(cust,regPos.x,regPos.y+30,1.5)){
+      const qOff=(cust._queuePos||0)*50;
+      if(moveToward(cust,regPos.x,regPos.y+30+qOff,1.5)){
         cust.state='waiting_to_pay';
       }
     }
     else if(cust.state==='waiting_to_pay'){
-      // Draw standing still
-      drawChar(cust.canvas,cust.data,0,'down');
-      if(playerNearReg){
-        // Pay!
+      // Move to correct queue spot
+      const qOff=(cust._queuePos||0)*50;
+      const targetY=regPos.y+30+qOff;
+      if(Math.abs(cust.y-targetY)>2){
+        moveToward(cust,regPos.x,targetY,1);
+      } else {
+        drawChar(cust.canvas,cust.data,0,'up');
+      }
+      // Only first in line can pay
+      if(playerNearReg&&cust._queuePos===0){
         updateMoney(10);
         cust.state='leaving';
       }
