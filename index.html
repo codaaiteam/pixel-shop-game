@@ -1515,8 +1515,6 @@ document.getElementById('done-placing-btn').onclick=()=>{
   const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf');
   if(placed.length===0)return;
   document.getElementById('done-placing-btn').style.display='none';
-  document.getElementById('design-btn').style.display='none';
-  document.getElementById('shop-tab').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
   document.getElementById('start-day-btn').style.display='inline-block';
   document.getElementById('shop-hint').textContent='Ready to open for business!';
@@ -1680,6 +1678,9 @@ const dayLoop = () => {
 const startDay = () => {
   dayRunning=true;
   document.getElementById('start-day-btn').style.display='none';
+  document.getElementById('design-btn').style.display='none';
+  document.getElementById('shop-tab').style.display='none';
+  document.getElementById('inventory-menu').style.display='none';
   document.getElementById('shop-hint').textContent='Stand near the register to serve customers!';
   document.getElementById('money-tab').style.display='block';
   document.getElementById('money-tab').textContent='$'+money;
