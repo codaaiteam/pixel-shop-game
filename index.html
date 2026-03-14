@@ -197,6 +197,56 @@ body{
   pointer-events:none;
 }
 #clothing-bottom{display:flex;gap:8px;justify-content:center;padding:4px 0}
+
+/* SHOP TAB & INVENTORY */
+#shop-tab{
+  position:absolute;top:50px;right:0;z-index:40;
+  background:#c8a065;border:3px solid #5a3a18;border-right:none;
+  padding:8px 6px;cursor:pointer;
+  box-shadow:inset 0 0 0 1px #e8c888,-2px 2px 4px rgba(0,0,0,0.3);
+  display:none;flex-direction:column;align-items:center;gap:2px;
+}
+#shop-tab canvas{image-rendering:pixelated}
+#shop-tab .notif{
+  position:absolute;top:-4px;left:-4px;width:10px;height:10px;
+  background:#c83838;border:2px solid #5a3a18;border-radius:50%;display:none;
+}
+#dark-overlay{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.7);z-index:35;display:none;
+  pointer-events:auto;
+}
+#inventory-menu{
+  position:absolute;top:40px;right:50px;z-index:50;
+  background:#c8a065;border:4px solid #5a3a18;
+  box-shadow:inset 0 0 0 2px #e8c888,4px 4px 12px rgba(0,0,0,0.5);
+  width:340px;height:400px;display:none;flex-direction:column;
+}
+#inv-tabs{display:flex;border-bottom:3px solid #5a3a18}
+.inv-tab{
+  flex:1;padding:6px 4px;text-align:center;
+  background:linear-gradient(180deg,#d8b878 0%,#b89058 100%);
+  border-right:2px solid #5a3a18;
+  font-family:'Press Start 2P',monospace;font-size:5px;color:#3a2210;
+  cursor:pointer;
+}
+.inv-tab:last-child{border-right:none}
+.inv-tab.active{background:linear-gradient(180deg,#a87838 0%,#886028 100%);color:#f8e8c0}
+#inv-content{flex:1;padding:8px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.inv-item{
+  width:48px;height:48px;border:2px solid #5a3a18;
+  background:#e8d8c0;display:flex;align-items:center;justify-content:center;
+  cursor:grab;image-rendering:pixelated;
+}
+.inv-item canvas{image-rendering:pixelated}
+.inv-item.dragging{opacity:0.5;cursor:grabbing}
+.inv-empty-msg{
+  width:100%;text-align:center;color:#6a5030;font-size:6px;
+  font-family:'Press Start 2P',monospace;margin-top:40px;
+}
+.placed-item.highlight-target{box-shadow:0 0 12px 4px #f8e888;z-index:15}
+.clothing-on-rack{position:absolute;pointer-events:none;image-rendering:pixelated}
+.clothing-on-shelf{position:absolute;pointer-events:none;image-rendering:pixelated}
 </style>
 </head>
 <body>
@@ -233,6 +283,17 @@ body{
     <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
+    <div id="dark-overlay"></div>
+    <div id="shop-tab"><span class="notif"></span><canvas id="shop-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">SHOP</span></div>
+    <div id="inventory-menu">
+      <div id="inv-tabs">
+        <div class="inv-tab" data-tab="furniture">Furniture</div>
+        <div class="inv-tab active" data-tab="clothing">Clothing</div>
+        <div class="inv-tab" data-tab="decor">Decor</div>
+        <div class="inv-tab" data-tab="paintings">Paintings</div>
+      </div>
+      <div id="inv-content"></div>
+    </div>
   </div>
   <div id="clothing-screen" class="screen">
     <h2>DESIGN CLOTHING</h2>
@@ -247,7 +308,7 @@ body{
       </div>
     </div>
     <div id="clothing-bottom">
-      <button class="sdv-btn" id="back-to-shop" style="font-size:7px">BACK TO SHOP</button>
+      <button class="sdv-btn" id="clothing-done" style="font-size:7px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button>
     </div>
     <div id="locked-toast">Locked.</div>
   </div>
@@ -1141,13 +1202,215 @@ const initClothingScreen = () => {
   drawClothingPreview();
 };
 
+// ============ INVENTORY SYSTEM ============
+let inventory=[];// array of designed clothing objects
+let activeInvTab='clothing';
+let shopTabVisible=false;
+
+const drawShopTabIcon = () => {
+  const ctx=document.getElementById('shop-tab-icon').getContext('2d');
+  ctx.clearRect(0,0,16,16);
+  // Small hanger + shirt icon
+  rect(ctx,6,1,4,1,'#909088');rect(ctx,3,2,10,1,'#a0a098');
+  rect(ctx,4,3,8,6,'#c83838');rect(ctx,4,3,3,6,'#d85050');
+  rect(ctx,2,3,2,3,'#c83838');rect(ctx,12,3,2,3,'#c83838');
+  rect(ctx,5,9,6,4,'#384060');rect(ctx,5,9,3,4,'#485070');
+};
+
+const showShopTab = (withNotif) => {
+  const tab=document.getElementById('shop-tab');
+  tab.style.display='flex';
+  shopTabVisible=true;
+  drawShopTabIcon();
+  if(withNotif)tab.querySelector('.notif').style.display='block';
+};
+
+const drawMiniTshirt = (ctx,color,w,h) => {
+  const c=color,cH=shade(c,20),cS=shade(c,-25);
+  ctx.clearRect(0,0,w,h);
+  // Tiny t-shirt
+  rect(ctx,Math.floor(w*0.15),Math.floor(h*0.1),Math.floor(w*0.7),Math.floor(h*0.75),c);
+  rect(ctx,Math.floor(w*0.15),Math.floor(h*0.1),Math.floor(w*0.3),Math.floor(h*0.75),cH);
+  rect(ctx,0,Math.floor(h*0.1),Math.floor(w*0.2),Math.floor(h*0.35),c);
+  rect(ctx,Math.floor(w*0.8),Math.floor(h*0.1),Math.floor(w*0.2),Math.floor(h*0.35),cS);
+};
+
+const drawHangingTshirt = (ctx,color,graphic,w,h) => {
+  const c=color,cH=shade(c,20),cS=shade(c,-25),cD=shade(c,-45);
+  ctx.clearRect(0,0,w,h);
+  // Open hanging t-shirt
+  rect(ctx,2,4,w-4,h-6,c);rect(ctx,2,4,Math.floor(w*0.4),h-6,cH);
+  rect(ctx,Math.floor(w*0.6),4,Math.floor(w*0.4),h-6,cS);
+  // Sleeves spread out
+  rect(ctx,0,4,4,Math.floor(h*0.4),c);rect(ctx,w-4,4,4,Math.floor(h*0.4),cS);
+  // Collar
+  rect(ctx,Math.floor(w*0.3),2,Math.floor(w*0.4),3,cD);
+  // Hanger
+  rect(ctx,Math.floor(w/2)-1,0,2,4,'#a0a098');
+  // Graphic if any
+  if(graphic){
+    const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+    drawClothingGraphic(tc.getContext('2d'),graphic,0,0);
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(tc,Math.floor(w*0.3),Math.floor(h*0.3),Math.floor(w*0.4),Math.floor(h*0.35));
+  }
+};
+
+const drawFoldedTshirt = (ctx,color,w,h) => {
+  const c=color,cH=shade(c,15),cS=shade(c,-20),cD=shade(c,-35);
+  ctx.clearRect(0,0,w,h);
+  // Folded shirt - just a colored rectangle with fold lines
+  rect(ctx,0,0,w,h,c);rect(ctx,0,0,Math.floor(w*0.4),h,cH);
+  rect(ctx,Math.floor(w*0.6),0,Math.floor(w*0.4),h,cS);
+  // Fold line
+  rect(ctx,Math.floor(w*0.35),0,1,h,cD);rect(ctx,Math.floor(w*0.65),0,1,h,cD);
+  rect(ctx,0,Math.floor(h*0.5),w,1,cD);
+};
+
+const initInventoryMenu = () => {
+  const content=document.getElementById('inv-content');
+  content.innerHTML='';
+
+  // Tab click handlers
+  document.querySelectorAll('.inv-tab').forEach(tab=>{
+    tab.classList.toggle('active',tab.dataset.tab===activeInvTab);
+    tab.onclick=()=>{
+      activeInvTab=tab.dataset.tab;
+      initInventoryMenu();
+    };
+  });
+
+  if(activeInvTab==='clothing'&&inventory.length>0){
+    inventory.forEach((item,idx)=>{
+      const div=document.createElement('div');div.className='inv-item';
+      const c=document.createElement('canvas');c.width=20;c.height=20;
+      c.style.width='40px';c.style.height='40px';
+      drawMiniTshirt(c.getContext('2d'),CLOTHING_COLORS[item.color],20,20);
+      div.appendChild(c);
+      // Drag from inventory
+      let dragClone=null;
+      const startInvDrag=(cx,cy)=>{
+        dragClone=document.createElement('canvas');
+        dragClone.width=20;dragClone.height=20;
+        dragClone.style.width='40px';dragClone.style.height='40px';
+        dragClone.style.position='fixed';dragClone.style.zIndex='200';
+        dragClone.style.pointerEvents='none';dragClone.style.imageRendering='pixelated';
+        dragClone.style.opacity='0.8';
+        drawMiniTshirt(dragClone.getContext('2d'),CLOTHING_COLORS[item.color],20,20);
+        document.body.appendChild(dragClone);
+        dragClone.style.left=(cx-20)+'px';dragClone.style.top=(cy-20)+'px';
+        div.classList.add('dragging');
+        // Highlight valid targets
+        document.querySelectorAll('.placed-item').forEach(pi=>{
+          if(pi.dataset.type==='shelf'||pi.dataset.type==='rack')pi.classList.add('highlight-target');
+        });
+      };
+      const moveInvDrag=(cx,cy)=>{
+        if(!dragClone)return;
+        dragClone.style.left=(cx-20)+'px';dragClone.style.top=(cy-20)+'px';
+      };
+      const endInvDrag=(cx,cy)=>{
+        if(!dragClone)return;
+        document.body.removeChild(dragClone);dragClone=null;
+        div.classList.remove('dragging');
+        document.querySelectorAll('.placed-item.highlight-target').forEach(pi=>pi.classList.remove('highlight-target'));
+        // Check if dropped on a shelf or rack
+        const area=document.getElementById('shop-area');
+        const targets=area.querySelectorAll('.placed-item[data-type="shelf"],.placed-item[data-type="rack"]');
+        for(const target of targets){
+          const r=target.getBoundingClientRect();
+          if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){
+            placeClothingOnFurniture(target,item,idx);
+            break;
+          }
+        }
+      };
+      div.addEventListener('mousedown',e=>{e.preventDefault();startInvDrag(e.clientX,e.clientY);});
+      const mmh=e=>moveInvDrag(e.clientX,e.clientY);
+      const muh=e=>{endInvDrag(e.clientX,e.clientY);document.removeEventListener('mousemove',mmh);document.removeEventListener('mouseup',muh);};
+      div.addEventListener('mousedown',()=>{document.addEventListener('mousemove',mmh);document.addEventListener('mouseup',muh);});
+      div.addEventListener('touchstart',e=>{e.preventDefault();startInvDrag(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+      const tmh=e=>{if(dragClone)moveInvDrag(e.touches[0].clientX,e.touches[0].clientY);};
+      const tuh=e=>{const t=e.changedTouches[0];endInvDrag(t.clientX,t.clientY);document.removeEventListener('touchmove',tmh);document.removeEventListener('touchend',tuh);};
+      div.addEventListener('touchstart',()=>{document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',tuh);},{passive:false});
+      content.appendChild(div);
+    });
+  } else {
+    const msg=document.createElement('div');msg.className='inv-empty-msg';
+    msg.textContent=activeInvTab==='clothing'?'No clothing designed yet.':'Empty.';
+    content.appendChild(msg);
+  }
+};
+
+const placeClothingOnFurniture = (target,item,invIdx) => {
+  const isRack=target.dataset.type==='rack';
+  const existing=target.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  if(isRack&&existing>=4)return;
+  if(!isRack&&existing>=3)return;
+
+  const el=document.createElement('canvas');
+  el.className=isRack?'clothing-on-rack':'clothing-on-shelf';
+
+  if(isRack){
+    el.width=12;el.height=18;
+    el.style.width='12px';el.style.height='18px';
+    drawHangingTshirt(el.getContext('2d'),CLOTHING_COLORS[item.color],item.graphic,12,18);
+    el.style.position='absolute';
+    el.style.left=(8+existing*12)+'px';
+    el.style.top='10px';
+  } else {
+    el.width=10;el.height=8;
+    el.style.width='10px';el.style.height='8px';
+    drawFoldedTshirt(el.getContext('2d'),CLOTHING_COLORS[item.color],10,8);
+    el.style.position='absolute';
+    const shelfRow=Math.floor(existing/2);
+    const shelfCol=existing%2;
+    el.style.left=(10+shelfCol*16)+'px';
+    el.style.top=(8+shelfRow*18)+'px';
+  }
+  target.querySelector('canvas').parentElement.appendChild(el);
+
+  // Remove from inventory
+  inventory.splice(invIdx,1);
+  initInventoryMenu();
+};
+
+// Done decorating -> go to clothing design
 document.getElementById('done-decorating').onclick=()=>{
+  document.getElementById('item-panel').style.display='none';
+  document.getElementById('done-decorating').style.display='none';
   showScreen('clothing-screen');
   initClothingScreen();
 };
-document.getElementById('back-to-shop').onclick=()=>{
+
+// Done designing clothing -> back to shop with inventory
+document.getElementById('clothing-done').onclick=()=>{
+  // Save designed clothing to inventory
+  inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
+  clothingState={type:'tshirt',color:0,graphic:null};
   showScreen('shop-screen');
   requestAnimationFrame(gameLoop);
+  // Show shop tab with notification
+  showShopTab(true);
+  // Show dark overlay briefly to guide player
+  const overlay=document.getElementById('dark-overlay');
+  overlay.style.display='block';
+  overlay.onclick=()=>{overlay.style.display='none';};
+  // Auto-dismiss after clicking shop tab
+};
+
+// Shop tab click
+document.getElementById('shop-tab').onclick=()=>{
+  const menu=document.getElementById('inventory-menu');
+  const overlay=document.getElementById('dark-overlay');
+  overlay.style.display='none';
+  document.getElementById('shop-tab').querySelector('.notif').style.display='none';
+  if(menu.style.display==='flex'){
+    menu.style.display='none';
+  } else {
+    menu.style.display='flex';
+    initInventoryMenu();
+  }
 };
 
 initCharCreate();
