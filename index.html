@@ -570,11 +570,6 @@ const ITEMS={
       rect(c,ox,oy,6,54,'#7a5830');rect(c,ox,oy,3,54,'#8a6838');
       rect(c,ox+44,oy,6,54,'#6a4828');rect(c,ox+44,oy,3,54,'#7a5830');
       for(let y=0;y<54;y+=18){rect(c,ox,oy+y,50,6,'#a08050');rect(c,ox,oy+y,50,2,'#b89060');}
-      rect(c,ox+10,oy+8,10,8,'#c83838');rect(c,ox+10,oy+8,10,3,'#d85050');
-      rect(c,ox+26,oy+8,10,8,'#4878b8');rect(c,ox+26,oy+8,10,3,'#5888c8');
-      rect(c,ox+10,oy+26,10,8,'#489848');rect(c,ox+10,oy+26,10,3,'#58a858');
-      rect(c,ox+30,oy+26,10,8,'#d89030');rect(c,ox+30,oy+26,10,3,'#e8a040');
-      rect(c,ox+18,oy+44,14,8,'#785098');rect(c,ox+18,oy+44,14,3,'#8860a8');
     });
   }},
   rack:{name:'Rack',w:60,h:56,draw(ctx){
@@ -778,14 +773,14 @@ const drawRoom = () => {
   }
   // === LEFT WALL ===
   ctx.fillStyle='#a88848';
-  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(65,12);ctx.lineTo(65,400);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(65,12);ctx.lineTo(65,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
   ctx.fillStyle='#988040';
-  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(32,6);ctx.lineTo(32,445);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(32,6);ctx.lineTo(32,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
   // === RIGHT WALL ===
   ctx.fillStyle='#a88848';
-  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-65,12);ctx.lineTo(W-65,400);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-65,12);ctx.lineTo(W-65,H);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
   ctx.fillStyle='#988040';
-  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-32,6);ctx.lineTo(W-32,445);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(W-32,6);ctx.lineTo(W-32,H);ctx.lineTo(W,H);ctx.closePath();ctx.fill();
   // === FLOOR ===
   const fY=195;
   for(let y=fY;y<H;y+=12){
