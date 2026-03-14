@@ -1458,7 +1458,7 @@ document.getElementById('done-decorating').onclick=()=>{
   document.getElementById('done-decorating').style.display='none';
   furnitureLocked=true;
   document.getElementById('shop-area').classList.add('furniture-locked');
-  document.getElementById('design-btn').style.display='';
+  document.getElementById('design-btn').style.display='inline-block';
   showScreen('clothing-screen');
   initClothingScreen();
 };
@@ -1511,7 +1511,7 @@ document.getElementById('done-placing-btn').onclick=()=>{
   document.getElementById('design-btn').style.display='none';
   document.getElementById('shop-tab').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
-  document.getElementById('start-day-btn').style.display='';
+  document.getElementById('start-day-btn').style.display='inline-block';
 };
 
 // ============ DAY SIMULATION ============
@@ -1721,8 +1721,12 @@ const origPlaceClothing=placeClothingOnFurniture;
 // We need to show "Done" button after placing first clothing
 const checkShowDonePlacing = () => {
   const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
-  if(placed>0&&document.getElementById('start-day-btn').style.display==='none'){
-    document.getElementById('done-placing-btn').style.display='';
+  const sdBtn=document.getElementById('start-day-btn');
+  if(placed>0&&sdBtn.style.display!=='inline-block'&&!dayRunning){
+    document.getElementById('done-placing-btn').style.display='inline-block';
+  }
+  if(placed===0){
+    document.getElementById('done-placing-btn').style.display='none';
   }
 };
 // Observe shop area for clothing additions
