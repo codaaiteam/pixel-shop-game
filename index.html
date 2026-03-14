@@ -275,6 +275,29 @@ body{
   background:rgba(0,0,0,0.75);z-index:60;
   display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;
 }
+#shop-name-popup{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.7);z-index:55;
+  display:none;align-items:center;justify-content:center;
+}
+#shop-name-box{
+  background:#c8a065;border:4px solid #5a3a18;padding:16px 24px;
+  box-shadow:inset 0 0 0 2px #e8c888,4px 4px 12px rgba(0,0,0,0.5);
+  text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+#shop-name-box h3{color:#3a2210;font-family:'Press Start 2P',monospace;font-size:9px;text-shadow:1px 1px #d8b878}
+#shop-name-input{
+  background:#f8f0d8;border:3px solid #5a3a18;color:#3a2210;
+  padding:6px;font-family:'Press Start 2P',monospace;font-size:8px;
+  text-align:center;width:220px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.15);
+}
+#shop-name-input:focus{outline:none;border-color:#8a6a38}
+#shop-name-display{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:9;
+  background:rgba(90,58,24,0.85);border:2px solid #8a6838;padding:4px 12px;
+  color:#f8d828;font-family:'Press Start 2P',monospace;font-size:8px;
+  text-shadow:1px 1px #3a2010;display:none;
+}
 #sold-out-overlay h1{
   color:#f8d828;font-family:'Press Start 2P',monospace;font-size:20px;
   text-shadow:2px 2px #5a3a18;
@@ -319,7 +342,15 @@ body{
     <div id="shop-header"><span>DECORATE YOUR STORE</span><span class="hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
+    <div id="shop-name-display"></div>
     <div id="money-tab">$0</div>
+    <div id="shop-name-popup">
+      <div id="shop-name-box">
+        <h3>Don't Forget the Shop Name!</h3>
+        <input type="text" id="shop-name-input" placeholder="Enter shop name..." maxlength="20">
+        <button class="sdv-btn" id="shop-name-ok" style="font-size:7px;padding:6px 16px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button>
+      </div>
+    </div>
     <div id="sold-out-overlay"><h1>SOLD OUT!</h1><p>All clothes have been sold!</p></div>
     <div id="dark-overlay"></div>
     <div id="shop-tab"><span class="notif"></span><canvas id="shop-tab-icon" width="16" height="16" style="width:24px;height:24px"></canvas><span style="font-family:'Press Start 2P',monospace;font-size:4px;color:#3a2210">SHOP</span></div>
@@ -1673,6 +1704,15 @@ const startDay = () => {
 };
 
 document.getElementById('start-day-btn').onclick=()=>{
+  document.getElementById('shop-name-popup').style.display='flex';
+  document.getElementById('shop-name-input').focus();
+};
+document.getElementById('shop-name-ok').onclick=()=>{
+  const name=document.getElementById('shop-name-input').value.trim()||'My Shop';
+  document.getElementById('shop-name-popup').style.display='none';
+  const display=document.getElementById('shop-name-display');
+  display.textContent=name;
+  display.style.display='block';
   startDay();
 };
 
