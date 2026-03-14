@@ -1923,6 +1923,52 @@ const renderStoreMenu = () => {
 
   items.forEach(si=>{
     const div=document.createElement('div');div.className='store-item';
+
+    // Draw preview image
+    const preview=document.createElement('canvas');
+    preview.style.imageRendering='pixelated';
+    if(si.type==='graphic'){
+      preview.width=7;preview.height=6;preview.style.width='42px';preview.style.height='36px';
+      drawClothingGraphic(preview.getContext('2d'),si.unlockId,0,0);
+    } else if(si.type==='clothingType'){
+      preview.width=30;preview.height=24;preview.style.width='60px';preview.style.height='48px';
+      const pc=preview.getContext('2d');
+      const c='#4070b0',cH=shade(c,20),cS=shade(c,-25),cD=shade(c,-45);
+      if(si.unlockId==='hoodie'){
+        rect(pc,5,4,20,16,c);rect(pc,5,4,8,16,cH);rect(pc,17,4,8,16,cS);
+        rect(pc,2,4,3,10,c);rect(pc,25,4,3,10,cS);
+        rect(pc,8,2,14,4,cD);rect(pc,10,3,10,2,shade(c,-15));
+        rect(pc,5,18,20,2,cD);
+      } else {
+        rect(pc,5,4,20,16,c);rect(pc,5,4,8,16,cH);rect(pc,17,4,8,16,cS);
+        rect(pc,2,4,3,12,'#383838');rect(pc,25,4,3,12,'#282828');
+        rect(pc,14,6,2,10,'#a0a098');rect(pc,14,8,2,2,'#c0b890');
+        rect(pc,14,12,2,2,'#c0b890');
+      }
+    } else if(si.type==='furniture'){
+      const it=ITEMS[si.itemKey];
+      if(it){
+        preview.width=it.w+2;preview.height=it.h+2;
+        preview.style.width=Math.min((it.w+2)*0.7,70)+'px';
+        preview.style.height=Math.min((it.h+2)*0.7,56)+'px';
+        it.draw(preview.getContext('2d'));
+      }
+    } else if(si.type==='decor'){
+      const it=ITEMS[si.itemKey];
+      if(it){
+        preview.width=it.w+2;preview.height=it.h+2;
+        preview.style.width=Math.min((it.w+2)*0.7,56)+'px';
+        preview.style.height=Math.min((it.h+2)*0.7,56)+'px';
+        it.draw(preview.getContext('2d'));
+      }
+    } else if(si.type==='avatar'){
+      preview.width=32;preview.height=32;preview.style.width='48px';preview.style.height='48px';
+      const tempPlayer=Object.assign({},player);
+      tempPlayer.accessory=si.accIdx;
+      drawChar(preview,tempPlayer);
+    }
+    div.appendChild(preview);
+
     const name=document.createElement('div');name.className='store-item-name';name.textContent=si.name;
     div.appendChild(name);
 
