@@ -382,17 +382,19 @@ body{
   font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;
 }
 #tutorial-popup{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.7);z-index:58;
-  display:none;align-items:center;justify-content:center;
+  position:absolute;top:90px;right:50px;z-index:58;
+  display:none;flex-direction:row;align-items:center;gap:0;
 }
 #tutorial-box{
-  background:#c8a065;border:4px solid #5a3a18;padding:16px 24px;
-  box-shadow:inset 0 0 0 2px #e8c888,4px 4px 12px rgba(0,0,0,0.5);
-  text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;
-  max-width:380px;
+  background:#c8a065;border:3px solid #5a3a18;padding:8px 12px;
+  box-shadow:inset 0 0 0 1px #e8c888,2px 2px 8px rgba(0,0,0,0.4);
+  text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  max-width:240px;
 }
-#tutorial-box p{color:#3a2210;font-family:'Press Start 2P',monospace;font-size:7px;line-height:2}
+#tutorial-box p{color:#3a2210;font-family:'Press Start 2P',monospace;font-size:5px;line-height:1.8}
+#tutorial-line{
+  width:30px;height:3px;background:#5a3a18;flex-shrink:0;
+}
 #sold-out-overlay h1{
   color:#f8d828;font-family:'Press Start 2P',monospace;font-size:20px;
   text-shadow:2px 2px #5a3a18;
@@ -483,8 +485,9 @@ body{
     <div id="tutorial-popup">
       <div id="tutorial-box">
         <p>This is the Store. You can buy furniture and more supplies here.</p>
-        <button class="sdv-btn" id="tutorial-ok" style="font-size:7px;padding:6px 16px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button>
+        <button class="sdv-btn" id="tutorial-ok" style="font-size:5px;padding:4px 10px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button>
       </div>
+      <div id="tutorial-line"></div>
     </div>
   </div>
   <div id="clothing-screen" class="screen">
@@ -1511,24 +1514,61 @@ const drawClothingPreview = () => {
   const cH=shade(c,20),cS=shade(c,-25),cD=shade(c,-45);
 
   if(clothingState.type==='tshirt'){
-    // T-shirt shape - big centered
+    // T-shirt shape
     rect(ctx,20,15,80,70,c);rect(ctx,20,15,30,70,cH);rect(ctx,70,15,30,70,cS);
-    // Sleeves
     rect(ctx,5,15,15,30,c);rect(ctx,5,15,8,30,cH);
     rect(ctx,100,15,15,30,cS);rect(ctx,100,15,8,30,c);
-    // Collar
     rect(ctx,42,10,36,10,cD);rect(ctx,46,12,28,6,shade(c,-15));
-    // Bottom hem
     rect(ctx,20,82,80,3,cD);
-    // Sleeve hems
     rect(ctx,5,43,15,2,cD);rect(ctx,100,43,15,2,cD);
-    // Subtle fold lines
     rect(ctx,45,30,2,50,'rgba(0,0,0,0.06)');rect(ctx,73,30,2,50,'rgba(0,0,0,0.06)');
+  } else if(clothingState.type==='hoodie'){
+    // Hoodie - longer body, hood, kangaroo pocket, long sleeves
+    rect(ctx,20,18,80,78,c);rect(ctx,20,18,30,78,cH);rect(ctx,70,18,30,78,cS);
+    // Long sleeves
+    rect(ctx,2,18,18,50,c);rect(ctx,2,18,9,50,cH);
+    rect(ctx,100,18,18,50,cS);rect(ctx,100,18,9,50,c);
+    // Cuffs
+    rect(ctx,2,66,18,4,cD);rect(ctx,100,66,18,4,cD);
+    // Hood
+    rect(ctx,30,4,60,18,c);rect(ctx,30,4,24,18,cH);rect(ctx,66,4,24,18,cS);
+    rect(ctx,34,6,52,10,shade(c,-10));rect(ctx,38,8,44,6,cD);
+    // Hood opening
+    rect(ctx,42,14,36,8,shade(c,-15));
+    // Drawstrings
+    rect(ctx,48,22,2,10,'rgba(255,255,255,0.5)');rect(ctx,70,22,2,10,'rgba(255,255,255,0.5)');
+    // Kangaroo pocket
+    rect(ctx,35,60,50,16,cS);rect(ctx,37,62,46,12,shade(c,-10));
+    rect(ctx,58,62,2,12,cD);
+    // Bottom hem
+    rect(ctx,20,93,80,3,cD);
+    // Fold lines
+    rect(ctx,45,30,2,55,'rgba(0,0,0,0.05)');rect(ctx,73,30,2,55,'rgba(0,0,0,0.05)');
+  } else if(clothingState.type==='jacket'){
+    // Jacket - collar, zipper, pockets, structured
+    rect(ctx,20,18,80,76,c);rect(ctx,20,18,30,76,cH);rect(ctx,70,18,30,76,cS);
+    // Long sleeves
+    rect(ctx,2,18,18,48,cD);rect(ctx,2,18,9,48,shade(cD,10));
+    rect(ctx,100,18,18,48,shade(cD,-10));rect(ctx,100,18,9,48,cD);
+    // Cuffs
+    rect(ctx,2,64,18,4,shade(cD,-15));rect(ctx,100,64,18,4,shade(cD,-15));
+    // Collar - stand-up
+    rect(ctx,34,8,52,14,c);rect(ctx,34,8,20,14,cH);rect(ctx,66,8,20,14,cS);
+    rect(ctx,38,10,44,8,shade(c,10));
+    // Lapels
+    rect(ctx,38,18,12,20,shade(c,15));rect(ctx,70,18,12,20,shade(c,-5));
+    // Zipper line
+    rect(ctx,59,18,2,74,'#c0b090');rect(ctx,59,24,2,4,'#d8c8a0');rect(ctx,59,34,2,4,'#d8c8a0');rect(ctx,59,44,2,4,'#d8c8a0');
+    // Pockets
+    rect(ctx,28,55,22,14,cS);rect(ctx,30,57,18,10,shade(c,-8));
+    rect(ctx,70,55,22,14,shade(cS,-5));rect(ctx,72,57,18,10,shade(c,-12));
+    // Bottom hem
+    rect(ctx,20,91,80,3,cD);
   }
 
-  // Draw selected graphic centered on shirt
+  // Draw selected graphic centered on clothing
   if(clothingState.graphic){
-    const gx=46,gy=35;
+    const gx=46,gy=clothingState.type==='hoodie'?38:clothingState.type==='jacket'?36:35;
     ctx.save();
     // Scale graphic 3x
     const tc=document.createElement('canvas');tc.width=7;tc.height=6;
