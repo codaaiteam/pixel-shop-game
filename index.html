@@ -1905,9 +1905,37 @@ const moveToward = (cust,tx,ty,speed) => {
   return false;
 };
 
-const updateMoney = (amt) => {
+// Ding sound using Web Audio API
+let audioCtx;
+const playDing = () => {
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const osc=audioCtx.createOscillator();
+  const gain=audioCtx.createGain();
+  osc.connect(gain);gain.connect(audioCtx.destination);
+  osc.type='sine';osc.frequency.setValueAtTime(880,audioCtx.currentTime);
+  osc.frequency.setValueAtTime(1320,audioCtx.currentTime+0.05);
+  gain.gain.setValueAtTime(0.08,audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.3);
+  osc.start(audioCtx.currentTime);osc.stop(audioCtx.currentTime+0.3);
+};
+
+const showMoneyPopup = (amt,x,y) => {
+  const pop=document.createElement('div');
+  pop.textContent='+$'+amt;
+  pop.style.cssText='position:absolute;z-index:50;font-family:"Press Start 2P",monospace;font-size:10px;color:#48c848;text-shadow:1px 1px #1a3a10;pointer-events:none;transition:all 0.8s ease-out;opacity:1;';
+  pop.style.left=x+'px';pop.style.top=y+'px';
+  document.getElementById('shop-area').appendChild(pop);
+  requestAnimationFrame(()=>{
+    pop.style.top=(y-40)+'px';pop.style.opacity='0';
+  });
+  setTimeout(()=>{if(pop.parentElement)pop.parentElement.removeChild(pop);},900);
+};
+
+const updateMoney = (amt,cx,cy) => {
   money+=amt;
   document.getElementById('money-tab').textContent='$'+money;
+  playDing();
+  showMoneyPopup(amt,cx||400,cy||250);
 };
 
 const dayLoop = () => {
@@ -1973,7 +2001,7 @@ const dayLoop = () => {
       }
       // Only first in line can pay
       if(playerNearReg&&cust._queuePos===0){
-        updateMoney(10);
+        updateMoney(10,cust.x,cust.y-20);
         cust.state='leaving';
       }
     }
