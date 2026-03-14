@@ -1548,6 +1548,7 @@ document.getElementById('done-decorating').onclick=()=>{
 
 // Design button - go back to clothing design
 document.getElementById('design-btn').onclick=()=>{
+  if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
   showScreen('clothing-screen');
   clothingState={type:'tshirt',color:0,graphic:null};
   initClothingScreen();
@@ -1555,7 +1556,9 @@ document.getElementById('design-btn').onclick=()=>{
 
 // Done designing clothing -> back to shop with inventory
 document.getElementById('clothing-done').onclick=()=>{
+  if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
   // Save designed clothing to inventory
+  usedClothingSlots++;
   inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
   clothingState={type:'tshirt',color:0,graphic:null};
   showScreen('shop-screen');
@@ -1570,6 +1573,7 @@ document.getElementById('clothing-done').onclick=()=>{
   overlay.addEventListener('click',dismiss);
   // Auto-dismiss after 3 seconds
   setTimeout(dismiss,3000);
+  updateDesignBtn();
 };
 
 // Shop tab click
@@ -1829,6 +1833,7 @@ document.getElementById('sold-out-ok').onclick=()=>{
   requestAnimationFrame(gameLoop);
   // Show store tab after first day
   showStoreTab();
+  updateDesignBtn();
 };
 
 // ============ STORE SYSTEM ============
@@ -1856,6 +1861,9 @@ const STORE_DECOR=[
   {id:'flowers_tulips',name:'Tulip Pot',price:35,type:'decor',itemKey:'flowers'},
 ];
 const STORE_CLOTHING=[
+  {id:'slot_5',name:'+5 Clothing Slots',price:15,type:'slots',amount:5},
+  {id:'slot_10',name:'+10 Clothing Slots',price:25,type:'slots',amount:10},
+  {id:'slot_20',name:'+20 Clothing Slots',price:40,type:'slots',amount:20},
   {id:'av_hat',name:'Cowboy Hat',price:15,type:'avatar',accIdx:5},
   {id:'av_glasses',name:'Cool Glasses',price:10,type:'avatar',accIdx:1},
   {id:'av_headband',name:'Red Headband',price:10,type:'avatar',accIdx:2},
@@ -1864,6 +1872,8 @@ const STORE_CLOTHING=[
 ];
 
 let purchased={};// track purchased item ids
+let maxClothingSlots=5,usedClothingSlots=0;// clothing design slots
+let boughtFurniture=false;// track if new furniture was bought
 
 const drawStoreTabIcon = () => {
   const ctx=document.getElementById('store-tab-icon').getContext('2d');
@@ -1961,6 +1971,14 @@ const renderStoreMenu = () => {
         preview.style.height=Math.min((it.h+2)*0.7,56)+'px';
         it.draw(preview.getContext('2d'));
       }
+    } else if(si.type==='slots'){
+      preview.width=20;preview.height=16;preview.style.width='40px';preview.style.height='32px';
+      const pc=preview.getContext('2d');
+      // Draw a small t-shirt with a + sign
+      rect(pc,4,3,12,10,'#d8b878');rect(pc,4,3,5,10,'#e8c888');
+      rect(pc,2,3,2,5,'#d8b878');rect(pc,16,3,2,5,'#c8a868');
+      rect(pc,7,1,6,3,'#c8a068');
+      pc.fillStyle='#48a848';pc.fillRect(9,6,2,5);pc.fillRect(8,8,4,1);
     } else if(si.type==='avatar'){
       preview.width=32;preview.height=32;preview.style.width='48px';preview.style.height='48px';
       const tempPlayer=Object.assign({},player);
@@ -1996,9 +2014,15 @@ const renderStoreMenu = () => {
         } else if(si.type==='clothingType'){
           const t=CLOTHING_TYPES.find(t=>t.id===si.unlockId);
           if(t)t.locked=false;
+        } else if(si.type==='slots'){
+          maxClothingSlots+=si.amount;
+          updateDesignBtn();
         } else if(si.type==='furniture'){
-          // Place furniture in shop
           placeItem(si.itemKey);
+          boughtFurniture=true;
+          // Show decorate hint
+          document.getElementById('shop-hint').textContent='New furniture added! You can rearrange your store.';
+          enableRedecorate();
         } else if(si.type==='decor'){
           placeItem(si.itemKey);
         } else if(si.type==='avatar'){
@@ -2013,6 +2037,36 @@ const renderStoreMenu = () => {
     }
     content.appendChild(div);
   });
+};
+
+// Update design button state based on slots
+const updateDesignBtn = () => {
+  const btn=document.getElementById('design-btn');
+  if(btn.style.display==='none')return;
+  if(usedClothingSlots>=maxClothingSlots){
+    btn.style.opacity='0.4';
+    btn.style.filter='brightness(0.5)';
+    btn.title='No slots left - buy more in the Store!';
+  } else {
+    btn.style.opacity='1';
+    btn.style.filter='none';
+    btn.title='';
+  }
+};
+
+// Enable re-decorate mode when new furniture is bought
+const enableRedecorate = () => {
+  furnitureLocked=false;
+  document.getElementById('shop-area').classList.remove('furniture-locked');
+  // Show a re-decorate button to lock again when done
+  document.getElementById('done-placing-btn').style.display='inline-block';
+  document.getElementById('done-placing-btn').onclick=()=>{
+    furnitureLocked=true;
+    document.getElementById('shop-area').classList.add('furniture-locked');
+    document.getElementById('done-placing-btn').style.display='none';
+    boughtFurniture=false;
+    document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
+  };
 };
 
 initCharCreate();
