@@ -261,6 +261,11 @@ body{
   background:linear-gradient(180deg,#c84040 0%,#a03030 100%);
   color:#f8e8c0;text-shadow:1px 1px #601818;
 }
+#redecorate-btn{
+  display:none;font-size:6px;padding:4px 10px;
+  background:linear-gradient(180deg,#d89030 0%,#b87020 100%);
+  color:#f8e8c0;text-shadow:1px 1px #604018;
+}
 #money-tab{
   position:absolute;top:50px;left:0;z-index:40;
   background:#c8a065;border:3px solid #5a3a18;border-left:none;
@@ -399,7 +404,7 @@ body{
   </div>
   <div id="transition" class="screen"><div id="transition-text">One day later...</div></div>
   <div id="shop-screen" class="screen">
-    <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
+    <div id="shop-header"><span id="shop-title">DECORATE YOUR STORE</span><span class="hint" id="shop-hint">Click to place | Drag to move | X to delete</span><div style="display:flex;gap:6px;align-items:center"><span id="player-name-display"></span><button class="sdv-btn" id="done-decorating" style="font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button><button class="sdv-btn" id="design-btn" style="display:none;font-size:6px;padding:4px 10px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">DESIGN</button><button class="sdv-btn" id="done-placing-btn">DONE</button><button class="sdv-btn" id="redecorate-btn">DONE</button><button class="sdv-btn" id="start-day-btn">START DAY</button></div></div>
     <div id="shop-area"><canvas id="room-canvas" width="800" height="490"></canvas><div id="player-sprite"><canvas width="32" height="32" style="width:64px;height:64px;image-rendering:pixelated"></canvas></div></div>
     <div id="item-panel"></div>
     <div id="shop-name-display"></div>
@@ -2055,18 +2060,24 @@ const updateDesignBtn = () => {
 };
 
 // Enable re-decorate mode when new furniture is bought
+let redecorating=false;
 const enableRedecorate = () => {
+  redecorating=true;
   furnitureLocked=false;
   document.getElementById('shop-area').classList.remove('furniture-locked');
-  // Show a re-decorate button to lock again when done
-  document.getElementById('done-placing-btn').style.display='inline-block';
-  document.getElementById('done-placing-btn').onclick=()=>{
-    furnitureLocked=true;
-    document.getElementById('shop-area').classList.add('furniture-locked');
-    document.getElementById('done-placing-btn').style.display='none';
-    boughtFurniture=false;
-    document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
-  };
+  document.getElementById('store-menu').style.display='none';
+  // Show rearrange button
+  document.getElementById('redecorate-btn').style.display='inline-block';
+  document.getElementById('shop-hint').textContent='Drag furniture to rearrange! Press DONE when finished.';
+};
+
+document.getElementById('redecorate-btn').onclick=()=>{
+  redecorating=false;
+  furnitureLocked=true;
+  document.getElementById('shop-area').classList.add('furniture-locked');
+  document.getElementById('redecorate-btn').style.display='none';
+  boughtFurniture=false;
+  document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
 };
 
 initCharCreate();
