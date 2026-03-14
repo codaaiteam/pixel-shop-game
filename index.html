@@ -1471,7 +1471,6 @@ document.getElementById('done-decorating').onclick=()=>{
 
 // Design button - go back to clothing design
 document.getElementById('design-btn').onclick=()=>{
-  if(inventory.length>=5){showLockedToast();return;}
   showScreen('clothing-screen');
   clothingState={type:'tshirt',color:0,graphic:null};
   initClothingScreen();
@@ -1479,7 +1478,6 @@ document.getElementById('design-btn').onclick=()=>{
 
 // Done designing clothing -> back to shop with inventory
 document.getElementById('clothing-done').onclick=()=>{
-  if(inventory.length>=5){showLockedToast();return;}
   // Save designed clothing to inventory
   inventory.push({type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
   clothingState={type:'tshirt',color:0,graphic:null};
