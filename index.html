@@ -577,11 +577,8 @@ const ITEMS={
       rect(c,ox+28,oy,4,54,'#909088');rect(c,ox+28,oy,2,54,'#a0a098');
       rect(c,ox+4,oy+4,52,4,'#a0a098');rect(c,ox+4,oy+4,52,2,'#b0b0a8');
       rect(c,ox+14,oy+48,32,6,'#808078');rect(c,ox+14,oy+48,32,2,'#909088');
-      const cols=['#c83838','#4878b8','#489848','#d89030'];
       for(let i=0;i<4;i++){const x=ox+8+i*12;
         rect(c,x+3,oy+8,2,4,'#b0b0a8');
-        rect(c,x,oy+12,10,16,cols[i]);rect(c,x,oy+12,10,4,shade(cols[i],25));
-        rect(c,x-2,oy+12,2,10,shade(cols[i],-30));rect(c,x+10,oy+12,2,10,shade(cols[i],-30));
       }
     });
   }},
@@ -870,9 +867,14 @@ const initItemPanel = () => {
   });
 };
 
+const ITEM_LIMITS={shelf:8,rack:5};
 const placeItem = (key) => {
   const item=ITEMS[key],area=document.getElementById('shop-area');
-  const div=document.createElement('div');div.className='placed-item';
+  if(ITEM_LIMITS[key]){
+    const count=area.querySelectorAll(`.placed-item[data-type="${key}"]`).length;
+    if(count>=ITEM_LIMITS[key])return;
+  }
+  const div=document.createElement('div');div.className='placed-item';div.dataset.type=key;
   div.style.left=(180+Math.random()*380)+'px';div.style.top=(210+Math.random()*180)+'px';
   const c=document.createElement('canvas');c.width=item.w+2;c.height=item.h+2;
   // Display items at 1x their canvas size
