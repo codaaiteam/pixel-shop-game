@@ -789,12 +789,22 @@ const buildCharMap = (p,frame,dir) => {
       fillR(7,13+by,1,5,shD);fillR(24,13+by,1,5,shD);
       // Hood outline on neck
       fillR(12,13+by,8,2,shD);
-    }else{// Jacket
+    }else if(sty===3){// Jacket
       fillR(8,13+by,2,6,shD);fillR(22,13+by,2,6,shade(shD,-10));
       // Zipper
       s(15,14+by,'#c0b090');s(16,14+by,'#a89878');
       s(15,16+by,'#c0b090');s(16,16+by,'#a89878');
       s(15,18+by,'#c0b090');s(16,18+by,'#a89878');
+    }else if(sty===4){// Cardigan
+      fillR(8,13+by,2,6,sh);fillR(22,13+by,2,6,shS);// long sleeves
+      fillR(7,13+by,1,5,shD);fillR(24,13+by,1,5,shD);
+      // Open front - show undershirt
+      fillR(14,14+by,4,5,'#f0e8d8');fillR(14,14+by,2,5,'#f8f0e0');
+      // Cardigan edges
+      s(13,14+by,shD);s(13,15+by,shD);s(13,16+by,shD);s(13,17+by,shD);s(13,18+by,shD);
+      s(18,14+by,shD);s(18,15+by,shD);s(18,16+by,shD);s(18,17+by,shD);s(18,18+by,shD);
+      // Buttons
+      s(13,15+by,'#c0a870');s(13,17+by,'#c0a870');
     }
 
     // === LEGS ===
@@ -2861,7 +2871,7 @@ const checkAlyssaMail = () => {
 
 // ============ ALYSSA SPECIAL CUSTOMER ============
 const ALYSSA_DATA={
-  skin:4,eyes:1,hair:5,hairColor:6,shirtStyle:2,shirtColor:5,pants:0,accessory:1,name:'Alyssa'
+  skin:4,eyes:1,hair:5,hairColor:6,shirtStyle:4,shirtColor:9,pants:0,accessory:1,name:'Alyssa'
 };
 // Override hair color to white for Alyssa
 const buildAlyssaSprite = () => {
