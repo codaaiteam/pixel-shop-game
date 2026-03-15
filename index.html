@@ -1591,60 +1591,99 @@ const drawRoom = () => {
     }
   }
   rect(ctx,65,fY,W-130,10,'rgba(0,0,0,0.08)');
-  // === MOLDING ===
-  rect(ctx,65,188,W-130,3,'#b89860');
-  rect(ctx,65,191,W-130,6,'#8a6830');
-  rect(ctx,65,188,W-130,1,'#c8a870');
-  for(let x=65;x<W-65;x+=14)rect(ctx,x,191,12,2,'#9a7840');
-  // === LARGE WINDOW ===
-  rect(ctx,268,12,264,162,'#6a4828');
-  // Sky gradient in window panes
-  const skyGrad=ctx.createLinearGradient(0,20,0,160);
-  skyGrad.addColorStop(0,'#5888c0');skyGrad.addColorStop(0.3,'#78a8d8');skyGrad.addColorStop(0.6,'#98c0e0');skyGrad.addColorStop(1,'#c8d8e8');
+  // === BASEBOARD / MOLDING ===
+  rect(ctx,65,186,W-130,4,'#909090');
+  rect(ctx,65,190,W-130,6,'#787878');
+  rect(ctx,65,186,W-130,1,'#a0a0a0');
+
+  // === STOREFRONT WINDOW (large, left-center) — big display window ===
+  rect(ctx,100,16,260,168,'#505050');// outer frame
+  // Sky gradient
+  const skyGrad=ctx.createLinearGradient(0,20,0,170);
+  skyGrad.addColorStop(0,'#5888c0');skyGrad.addColorStop(0.3,'#78a8d8');skyGrad.addColorStop(0.7,'#a8d0e8');skyGrad.addColorStop(1,'#d0e0f0');
   ctx.fillStyle=skyGrad;
-  ctx.fillRect(276,20,112,62);ctx.fillRect(400,20,112,62);
-  ctx.fillRect(276,90,112,68);ctx.fillRect(400,90,112,68);
-  // Clouds in windows
-  rect(ctx,290,30,28,8,'#e8e4e0');rect(ctx,296,26,18,6,'#f0ece8');
-  rect(ctx,420,42,24,7,'#e8e4e0');rect(ctx,310,100,20,6,'#e8e4e0');rect(ctx,448,108,18,6,'#e8e4e0');
-  rect(ctx,430,30,16,5,'#f0ece8');rect(ctx,480,50,20,6,'#e8e4e0');
-  // Window frame
-  rect(ctx,264,8,272,8,'#8a6838');rect(ctx,264,170,272,8,'#7a5830');
-  rect(ctx,264,8,8,170,'#8a6838');rect(ctx,528,8,8,170,'#7a5830');
-  rect(ctx,390,8,12,170,'#8a6838');rect(ctx,264,84,272,6,'#8a6838');
-  // Sunbeam
-  ctx.fillStyle='rgba(248,232,160,0.04)';
-  ctx.beginPath();ctx.moveTo(278,175);ctx.lineTo(350,175);ctx.lineTo(430,H);ctx.lineTo(190,H);ctx.closePath();ctx.fill();
-  // === DOOR ===
-  rect(ctx,600,28,88,170,'#6a4828');rect(ctx,604,32,80,162,'#8a6838');rect(ctx,608,36,72,154,'#7a5830');
-  rect(ctx,612,40,64,60,'#8a6838');rect(ctx,614,42,60,56,'#6a4828');
-  rect(ctx,612,108,64,76,'#8a6838');rect(ctx,614,110,60,72,'#6a4828');
-  rect(ctx,664,140,7,7,'#d8a030');rect(ctx,666,142,3,3,'#e8c050');
-  rect(ctx,608,192,72,6,'#884030');rect(ctx,612,193,64,4,'#a85038');
-  // === SMALL WINDOW ===
-  rect(ctx,96,30,110,100,'#6a4828');
-  // Sky gradient in small window
-  const skyGrad2=ctx.createLinearGradient(0,37,0,117);
-  skyGrad2.addColorStop(0,'#5888c0');skyGrad2.addColorStop(0.4,'#78a8d8');skyGrad2.addColorStop(1,'#c8d8e8');
-  ctx.fillStyle=skyGrad2;
-  ctx.fillRect(103,37,42,36);ctx.fillRect(157,37,42,36);
-  ctx.fillRect(103,81,42,36);ctx.fillRect(157,81,42,36);
-  // Small clouds
-  rect(ctx,112,44,16,5,'#e8e4e0');rect(ctx,165,50,14,4,'#f0ece8');
-  rect(ctx,120,90,12,4,'#e8e4e0');rect(ctx,170,95,10,4,'#f0ece8');
-  // Window frame
-  rect(ctx,92,26,118,8,'#8a6838');rect(ctx,92,126,118,8,'#7a5830');
-  rect(ctx,92,26,8,108,'#8a6838');rect(ctx,202,26,8,108,'#7a5830');
-  rect(ctx,148,26,10,108,'#8a6838');rect(ctx,92,75,118,6,'#8a6838');
-  // === LANTERN ===
-  rect(ctx,392,0,16,8,'#7a5830');rect(ctx,386,8,28,4,'#8a6838');
-  rect(ctx,388,12,24,12,'#d8a038');rect(ctx,390,14,20,8,'#f8e8a0');
-  rect(ctx,394,16,12,4,'#f8f0c8');
-  // === WALL DECOR ===
-  rect(ctx,556,42,28,28,'#a88858');rect(ctx,558,44,24,24,'#f0e8d8');
-  rect(ctx,569,48,2,8,'#3a2810');rect(ctx,569,48,7,2,'#3a2810');rect(ctx,569,55,2,2,'#c83838');
+  ctx.fillRect(108,24,244,152);
+  // Glass dividers
+  rect(ctx,228,16,4,168,'#606060');
+  rect(ctx,100,96,260,4,'#606060');
+  // Clouds
+  rect(ctx,130,34,30,8,'#e8e4e0');rect(ctx,138,28,18,8,'#f0ece8');
+  rect(ctx,260,44,22,6,'#e8e4e0');rect(ctx,150,106,18,5,'#e8e4e0');rect(ctx,300,110,16,5,'#f0ece8');
+  // Outlet shops visible outside
+  rect(ctx,120,140,36,36,'#c8a878');rect(ctx,122,142,32,28,'#d8b888');rect(ctx,134,156,8,20,'#7a5830');
+  rect(ctx,270,135,40,40,'#b8a8c0');rect(ctx,272,137,36,32,'#c8b8d0');rect(ctx,286,152,10,22,'#6a5070');
+  // Frame
+  rect(ctx,96,12,268,8,'#686868');rect(ctx,96,180,268,8,'#585858');
+  rect(ctx,96,12,8,176,'#686868');rect(ctx,356,12,8,176,'#585858');
+
+  // === SECOND WINDOW (right side, smaller) ===
+  rect(ctx,400,30,100,100,'#505050');
+  ctx.fillStyle=skyGrad;
+  ctx.fillRect(406,36,88,88);
+  rect(ctx,449,30,4,100,'#606060');
+  rect(ctx,400,78,100,4,'#606060');
+  rect(ctx,415,42,20,6,'#e8e4e0');rect(ctx,460,55,16,5,'#f0ece8');
+  // Frame
+  rect(ctx,396,26,108,8,'#686868');rect(ctx,396,126,108,8,'#585858');
+  rect(ctx,396,26,8,108,'#686868');rect(ctx,496,26,8,108,'#585858');
+
+  // === STORE ENTRANCE DOOR (glass door, right side) ===
+  rect(ctx,580,18,110,178,'#606060');
+  rect(ctx,586,24,98,166,'#687888');// glass door
+  // Door handle
+  rect(ctx,590,100,6,30,'#c0c0c0');rect(ctx,590,100,6,4,'#d0d0d0');
+  // Glass reflection
+  ctx.fillStyle='rgba(200,220,240,0.15)';
+  ctx.fillRect(600,30,30,150);
+  // "PUSH" text on door
+  rect(ctx,620,104,40,12,'rgba(0,0,0,0.15)');
+  // Door mat
+  rect(ctx,580,192,110,6,'#606050');rect(ctx,584,193,102,4,'#504840');
+  // View of outside through door
+  rect(ctx,600,40,60,140,'#88b8d8');
+  rect(ctx,610,130,30,30,'#a0c8a0');// bush outside
+  rect(ctx,620,100,20,60,'#c0a878');// path outside
+
+  // === OVERHEAD TRACK LIGHTING ===
+  // Track bar across ceiling
+  rect(ctx,80,0,W-160,4,'#787878');rect(ctx,80,0,W-160,1,'#909090');
+  // Light fixtures
+  const drawSpotlight = (lx) => {
+    rect(ctx,lx,4,6,8,'#a0a0a0');rect(ctx,lx,4,3,8,'#b0b0b0');// fixture
+    rect(ctx,lx-2,12,10,4,'#d8d0b8');rect(ctx,lx,14,6,2,'#f8f0d0');// bulb
+    // Light cone on floor
+    ctx.fillStyle='rgba(248,240,210,0.04)';
+    ctx.beginPath();ctx.moveTo(lx-4,16);ctx.lineTo(lx+10,16);ctx.lineTo(lx+60,H);ctx.lineTo(lx-50,H);ctx.closePath();ctx.fill();
+  };
+  drawSpotlight(140);drawSpotlight(280);drawSpotlight(420);drawSpotlight(560);
+
+  // === RECESSED CEILING LIGHTS ===
+  for(let lx=120;lx<W-100;lx+=160){
+    rect(ctx,lx,0,30,3,'#e8e0c8');rect(ctx,lx+2,0,26,2,'#f8f0d8');
+    // Glow on wall below
+    ctx.fillStyle='rgba(248,240,220,0.06)';
+    ctx.fillRect(lx-10,4,50,30);
+  }
+
+  // === WALL ELEMENTS ===
+  // Store logo/sign on back wall (centered)
+  rect(ctx,310,40,140,24,'#505050');rect(ctx,312,42,136,20,'#404040');
+  // Simple decorative text area (shop name goes here)
+  rect(ctx,318,46,120,12,'#585858');
+
+  // Clothing poster/advertisement on left wall
+  rect(ctx,72,50,18,60,wc.sideD);// shadow
+  rect(ctx,70,48,18,60,'#e0d8c8');rect(ctx,71,49,16,58,'#f0e8d8');
+  // Simple clothing silhouette on poster
+  rect(ctx,75,56,6,8,'#d0a878');// shirt shape
+  rect(ctx,75,64,6,12,'#506888');// pants shape
+  rect(ctx,75,78,8,2,'#c04040');// sale tag
+
+  // Price tag display near door
+  rect(ctx,540,60,40,20,'#303030');rect(ctx,542,62,36,16,'#f0e8d0');
+
   // === CEILING ===
-  rect(ctx,65,0,W-130,3,'#c8b888');
+  rect(ctx,65,0,W-130,2,'#808080');
 };
 
 // ============ SHOP ============
