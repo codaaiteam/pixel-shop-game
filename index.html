@@ -2534,15 +2534,29 @@ const dayLoop = () => {
     }
   }
 
-  // Check if all clothing gone and no customers left
+  // Check if day should end naturally
   const remainingClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   const activeCust=customers.filter(c=>c.state!=='leaving').length;
+  const allDone=customers.length===0&&allSpawned;
+
   if(remainingClothing===0&&activeCust===0&&customers.length===0){
+    // Sold out — all clothes gone
     dayRunning=false;
     document.getElementById('end-day-btn').style.display='none';
     const ov=document.getElementById('sold-out-overlay');
     ov.querySelector('h1').textContent='SOLD OUT!';
     ov.querySelector('p').textContent='All clothes have been sold!';
+    ov.style.display='flex';
+    return;
+  }
+
+  if(allDone&&activeCust===0){
+    // All customers for today have come and gone, but clothes remain
+    dayRunning=false;
+    document.getElementById('end-day-btn').style.display='none';
+    const ov=document.getElementById('sold-out-overlay');
+    ov.querySelector('h1').textContent='DAY OVER!';
+    ov.querySelector('p').textContent=remainingClothing+' item(s) left unsold. They\'ll stay for tomorrow!';
     ov.style.display='flex';
     return;
   }
@@ -2562,33 +2576,48 @@ const startDay = () => {
   document.getElementById('money-tab').style.display='block';
   document.getElementById('money-tab').textContent='$'+money;
 
-  // Count total clothing on display
+  // Random number of customers for the day (not tied to clothing count)
   const totalClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
+  // Base: 40-90% of clothing count, with randomness; minimum 1, and varies by day
+  const minCust=Math.max(1,Math.floor(totalClothing*0.4));
+  const maxCust=Math.max(minCust,Math.ceil(totalClothing*0.9));
+  const maxCustomersToday=minCust+Math.floor(Math.random()*(maxCust-minCust+1));
   let spawned=0;
+  let allSpawned=false;
 
-  // Spawn customers one by one with delays
+  // Spawn customers one by one with delays, up to the daily limit
   const spawnNext = () => {
     if(!dayRunning)return;
     const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
-    const busyCust=customers.filter(c=>c.targetClothing&&c.state!=='leaving').length;
-    if(spawned<totalClothing&&remaining>0||busyCust<remaining){
-      if(remaining>0&&customers.filter(c=>c.state!=='leaving').length<3){
-        customers.push(spawnCustomer());
-        spawned++;
-      }
+    if(spawned>=maxCustomersToday||remaining===0){
+      allSpawned=true;
+      return;
+    }
+    if(remaining>0&&customers.filter(c=>c.state!=='leaving').length<3){
+      customers.push(spawnCustomer());
+      spawned++;
+    }
+    if(spawned<maxCustomersToday&&remaining>0){
       setTimeout(spawnNext,2000+Math.random()*2000);
+    } else {
+      allSpawned=true;
     }
   };
 
   // Start first customer after brief delay
   setTimeout(()=>{
+    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
+    if(remaining===0){allSpawned=true;return;}
     customers.push(spawnCustomer());
     spawned++;
     // Spawn Alyssa on every other day starting day 2
     if(dayCount>=2&&dayCount%2===0){
-      setTimeout(()=>{customers.push(spawnAlyssa());spawned++;},2000);
+      setTimeout(()=>{
+        if(spawned<maxCustomersToday){customers.push(spawnAlyssa());spawned++;}
+      },2000);
     }
-    setTimeout(spawnNext,3000);
+    if(spawned<maxCustomersToday)setTimeout(spawnNext,3000);
+    else allSpawned=true;
   },1000);
 
   requestAnimationFrame(dayLoop);
