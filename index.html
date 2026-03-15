@@ -2619,6 +2619,7 @@ const dayLoop = () => {
 };
 
 let dayStartTime=0;
+let allSpawned=false;
 
 const startDay = () => {
   dayCount++;
@@ -2643,7 +2644,7 @@ const startDay = () => {
   const maxCustomersToday=maxBuyersToday+numBrowsers;
   let spawned=0;
   let buyersSpawned=0;
-  let allSpawned=false;
+  allSpawned=false;
 
   // Spawn customers throughout the day with delays
   const spawnNext = () => {
