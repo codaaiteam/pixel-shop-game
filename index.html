@@ -2309,6 +2309,7 @@ document.getElementById('clothing-done').onclick=()=>{
     setTimeout(done,3000);
   }
   updateDesignBtn();
+  if(typeof saveGame==='function')saveGame();
 };
 
 // Shop tab click
@@ -2755,6 +2756,8 @@ document.getElementById('sold-out-ok').onclick=()=>{
   // Show store tab after first day
   showStoreTab();
   updateDesignBtn();
+  // Auto-save
+  if(typeof saveGame==='function')saveGame();
 };
 
 // ============ STORE SYSTEM ============
@@ -2949,6 +2952,7 @@ const renderStoreMenu = () => {
           }
         }
         renderStoreMenu();
+        if(typeof saveGame==='function')saveGame();
       };
       div.appendChild(btn);
     }
@@ -3333,11 +3337,229 @@ const endDay = () => {
   const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   overlay.querySelector('p').textContent=remaining>0?remaining+' item(s) left unsold.':'All clothes sold!';
   overlay.style.display='flex';
+  // Auto-save after day ends
+  if(typeof saveGame==='function')saveGame();
 };
 
 document.getElementById('end-day-btn').onclick=()=>{endDay();};
 
-initCharCreate();
+// ============ SAVE SYSTEM ============
+const SAVE_KEY='pixelShopSave';
+const SAVE_VERSION=1;
+
+const serializePlacedFurniture = () => {
+  const items=[];
+  document.querySelectorAll('#shop-area .placed-item').forEach(div=>{
+    items.push({type:div.dataset.type,left:div.style.left,top:div.style.top});
+  });
+  return items;
+};
+
+const serializeClothingOnDisplay = () => {
+  const result=[];
+  document.querySelectorAll('#shop-area .placed-item').forEach((div,idx)=>{
+    div.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').forEach(el=>{
+      result.push({
+        furnitureIdx:idx,
+        clothingType:el.dataset.clothingType||'tshirt',
+        clothingColor:parseInt(el.dataset.clothingColor)||0,
+        clothingGraphic:el.dataset.clothingGraphic||'none',
+        className:el.className
+      });
+    });
+  });
+  return result;
+};
+
+const buildSaveObject = () => ({
+  version:SAVE_VERSION,
+  timestamp:Date.now(),
+  player:{...player},
+  roomStyle:{...roomStyle},
+  money,dayCount,
+  inventory:inventory.map(i=>({type:i.type,color:i.color,graphic:i.graphic})),
+  allDesignedClothing:allDesignedClothing.map(i=>({type:i.type,color:i.color,graphic:i.graphic})),
+  usedClothingSlots,maxClothingSlots,
+  unlockedClothingTypes:CLOTHING_TYPES.filter(t=>!t.locked).map(t=>t.id),
+  unlockedGraphics:CLOTHING_GRAPHICS.filter(g=>!g.locked).map(g=>g.id),
+  purchased:{...purchased},
+  ownedDecor:ownedDecor.map(d=>({itemKey:d.itemKey,id:d.id})),
+  ownedAvatarClothes:ownedAvatarClothes.map(a=>({id:a.id,name:a.name,accIdx:a.accIdx})),
+  mailMessages:mailMessages.map(m=>({id:m.id,from:m.from,email:m.email,read:m.read,text:m.text,pfpType:m.id&&m.id.startsWith('alyssa')?'alyssa':'generic'})),
+  alyssaSentFirst,alyssaSentThank,alyssaKnown,mailTabShown,
+  shopTabTutorialDone:!!window._shopTabTutorialDone,
+  shopNameDone:!!window._shopNameDone,
+  shopName:document.getElementById('shop-name-display').textContent||'',
+  storeTabShown,shopTabVisible,furnitureLocked,
+  playerPos:{x:playerPos.x,y:playerPos.y},
+  placedFurniture:serializePlacedFurniture(),
+  clothingOnDisplay:serializeClothingOnDisplay()
+});
+
+const saveGame = () => {
+  try{
+    localStorage.setItem(SAVE_KEY,JSON.stringify(buildSaveObject()));
+  }catch(e){console.warn('Save failed:',e);}
+};
+
+const loadGame = () => {
+  const raw=localStorage.getItem(SAVE_KEY);
+  if(!raw)return false;
+  try{
+    const save=JSON.parse(raw);
+    return restoreState(save);
+  }catch(e){
+    console.warn('Save corrupted:',e);
+    return false;
+  }
+};
+
+const restoreState = (save) => {
+  // Player & room
+  Object.assign(player,save.player);
+  Object.assign(roomStyle,save.roomStyle||{});
+  money=save.money||0;
+  dayCount=save.dayCount||0;
+  inventory=(save.inventory||[]).slice();
+  allDesignedClothing=(save.allDesignedClothing||[]).slice();
+  usedClothingSlots=save.usedClothingSlots||0;
+  maxClothingSlots=save.maxClothingSlots||5;
+  purchased=save.purchased||{};
+  ownedDecor=(save.ownedDecor||[]).slice();
+  ownedAvatarClothes=(save.ownedAvatarClothes||[]).slice();
+
+  // Unlocks — default everything locked, then unlock saved
+  CLOTHING_TYPES.forEach(t=>{t.locked=!(save.unlockedClothingTypes||['tshirt']).includes(t.id);});
+  const tshirt=CLOTHING_TYPES.find(t=>t.id==='tshirt');if(tshirt)tshirt.locked=false;
+  CLOTHING_GRAPHICS.forEach(g=>{g.locked=!(save.unlockedGraphics||[]).includes(g.id);});
+  // Always keep default graphics unlocked
+  ['dog','cat','flowers'].forEach(id=>{const g=CLOTHING_GRAPHICS.find(x=>x.id===id);if(g)g.locked=false;});
+
+  // Mail
+  mailMessages=(save.mailMessages||[]).map(m=>({...m,pfpDraw:m.pfpType==='alyssa'?drawAlyssaPfp:null}));
+  alyssaSentFirst=save.alyssaSentFirst||false;
+  alyssaSentThank=save.alyssaSentThank||false;
+  alyssaKnown=save.alyssaKnown||false;
+  mailTabShown=save.mailTabShown||false;
+
+  // UI flags
+  window._shopTabTutorialDone=save.shopTabTutorialDone||false;
+  window._shopNameDone=save.shopNameDone||false;
+  storeTabShown=save.storeTabShown||false;
+  shopTabVisible=save.shopTabVisible||false;
+  furnitureLocked=save.furnitureLocked!==undefined?save.furnitureLocked:true;
+  playerPos=save.playerPos||{x:370,y:320};
+
+  // Show shop screen
+  showScreen('shop-screen');
+  document.getElementById('player-name-display').textContent=player.name;
+  drawRoom();initItemPanel();
+
+  // Restore placed furniture
+  const area=document.getElementById('shop-area');
+  (save.placedFurniture||[]).forEach(f=>{
+    placeItem(f.type);
+    const all=area.querySelectorAll(`.placed-item[data-type="${f.type}"]`);
+    const last=all[all.length-1];
+    if(last){last.style.left=f.left;last.style.top=f.top;}
+  });
+
+  // Restore clothing on furniture
+  (save.clothingOnDisplay||[]).forEach(cd=>{
+    const allFurn=area.querySelectorAll('.placed-item');
+    const target=allFurn[cd.furnitureIdx];
+    if(target){
+      const item={type:cd.clothingType,color:cd.clothingColor,graphic:cd.clothingGraphic==='none'?null:cd.clothingGraphic};
+      inventory.push(item);
+      placeClothingOnFurniture(target,item,inventory.length-1);
+    }
+  });
+
+  // Shop name
+  if(save.shopName){
+    const display=document.getElementById('shop-name-display');
+    display.textContent=save.shopName;display.style.display='block';
+  }
+
+  // Hide item panel & decorating if locked
+  if(furnitureLocked){
+    area.classList.add('furniture-locked');
+    document.getElementById('item-panel').style.display='none';
+    document.getElementById('done-decorating').style.display='none';
+  }
+
+  // Show tabs
+  if(shopTabVisible)showShopTab(false);
+  if(storeTabShown)showStoreTab();
+  if(ownedDecor.length>0||ownedAvatarClothes.length>0)showDecorAndAvatarTabs();
+  if(mailTabShown)showMailTab();
+
+  // Show buttons & money
+  document.getElementById('design-btn').style.display='inline-block';
+  document.getElementById('start-day-btn').style.display='inline-block';
+  document.getElementById('money-tab').style.display='block';
+  document.getElementById('money-tab').textContent='$'+money;
+  document.getElementById('shop-hint').textContent='Design more clothing or start a new day!';
+  document.getElementById('shop-title').textContent='YOUR SHOP';
+  updateDesignBtn();
+
+  // Player sprite
+  const sprite=document.getElementById('player-sprite');
+  drawChar(sprite.querySelector('canvas'),player);
+  sprite.style.left=playerPos.x+'px';sprite.style.top=playerPos.y+'px';
+  requestAnimationFrame(gameLoop);
+  return true;
+};
+
+// Auto-save every 30 seconds
+setInterval(()=>{
+  if(document.getElementById('shop-screen').classList.contains('active')&&!dayRunning){
+    saveGame();
+  }
+},30000);
+
+// Save on page unload
+window.addEventListener('beforeunload',()=>{
+  if(document.getElementById('shop-screen').classList.contains('active')){
+    saveGame();
+  }
+});
+
+// ============ STARTUP ============
+const hasSave = () => !!localStorage.getItem(SAVE_KEY);
+
+if(hasSave()){
+  // Show continue/new game options
+  initCharCreate();
+  const startBtn=document.getElementById('start-btn');
+  // Add continue button before start
+  const contBtn=document.createElement('button');
+  contBtn.id='continue-btn';
+  contBtn.textContent='CONTINUE';
+  contBtn.style.cssText=startBtn.style.cssText;
+  contBtn.style.background='linear-gradient(180deg,#48a848 0%,#308830 100%)';
+  contBtn.style.border='3px solid #5a3a18';
+  contBtn.style.color='#f8e8c0';
+  contBtn.style.padding='10px 24px';
+  contBtn.style.fontFamily="'Press Start 2P',monospace";
+  contBtn.style.fontSize='10px';
+  contBtn.style.cursor='pointer';
+  contBtn.style.boxShadow='inset 0 0 0 1px #68c868,1px 1px 0 #2a1808';
+  contBtn.style.textShadow='1px 1px #184818';
+  contBtn.style.marginBottom='6px';
+  contBtn.onclick=()=>{if(!loadGame()){alert('Save corrupted. Starting new game.');startBtn.click();}};
+  startBtn.parentNode.insertBefore(contBtn,startBtn);
+  startBtn.textContent='NEW GAME';
+  startBtn.style.fontSize='7px';
+  startBtn.style.padding='6px 16px';
+  startBtn.style.background='linear-gradient(180deg,#888 0%,#666 100%)';
+  startBtn.style.boxShadow='inset 0 0 0 1px #aaa,1px 1px 0 #2a1808';
+  startBtn.style.textShadow='1px 1px #333';
+  const origOnclick=startBtn.onclick;
+  startBtn.onclick=()=>{localStorage.removeItem(SAVE_KEY);player={skin:0,eyes:0,hair:0,hairColor:0,shirtStyle:0,shirtColor:0,pants:0,accessory:0,name:'Player'};player.name=document.getElementById('name-input').value.trim()||'Player';startCutscene();};
+} else {
+  initCharCreate();
+}
 </script>
 </body>
 </html>
