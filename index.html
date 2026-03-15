@@ -279,6 +279,7 @@ body{
 .placed-item.highlight-target{box-shadow:0 0 12px 4px #f8e888;z-index:15}
 .clothing-on-rack{position:absolute;pointer-events:none;image-rendering:pixelated}
 .clothing-on-shelf{position:absolute;pointer-events:none;image-rendering:pixelated}
+.clothing-on-mannequin{position:absolute;pointer-events:none;image-rendering:pixelated}
 
 /* DAY SIMULATION */
 #start-day-btn{
@@ -1514,7 +1515,9 @@ const placeItem = (key) => {
   }
   setTimeout(updatePanelLimits,0);
   const div=document.createElement('div');div.className='placed-item';div.dataset.type=key;
-  div.style.left=(180+Math.random()*380)+'px';div.style.top=(210+Math.random()*180)+'px';
+  const wallItem=key==='sign'||key==='mirror';
+  div.style.left=(wallItem?(100+Math.random()*500):(100+Math.random()*450))+'px';
+  div.style.top=(wallItem?(20+Math.random()*120):(180+Math.random()*200))+'px';
   const c=document.createElement('canvas');c.width=item.w+2;c.height=item.h+2;
   // Display items - register is smaller scale
   const scale=key==='register'?0.7:1;
@@ -1528,7 +1531,11 @@ const placeItem = (key) => {
   let dragging=false,offX=0,offY=0;
   const dw=item.w+2,dh=item.h+2;
   const startDrag = (cx,cy) => {if(furnitureLocked)return;dragging=true;div.classList.add('dragging');const r=div.getBoundingClientRect();offX=cx-r.left;offY=cy-r.top;};
-  const moveDrag = (cx,cy) => {if(!dragging)return;const ar=area.getBoundingClientRect();let nx=cx-ar.left-offX,ny=cy-ar.top-offY;nx=Math.max(0,Math.min(ar.width-dw,nx));ny=Math.max(0,Math.min(ar.height-dh,ny));div.style.left=nx+'px';div.style.top=ny+'px';};
+  const canGoOnWall=key==='sign'||key==='mirror';
+  const moveDrag = (cx,cy) => {if(!dragging)return;const ar=area.getBoundingClientRect();let nx=cx-ar.left-offX,ny=cy-ar.top-offY;
+    if(canGoOnWall){nx=Math.max(0,Math.min(ar.width-dw,nx));ny=Math.max(0,Math.min(ar.height-dh,ny));}
+    else{nx=Math.max(75,Math.min(670-dw,nx));ny=Math.max(140,Math.min(420,ny));}
+    div.style.left=nx+'px';div.style.top=ny+'px';};
   const endDrag = () => {if(dragging){dragging=false;div.classList.remove('dragging');}};
   div.addEventListener('mousedown',e=>{if(e.target===del)return;e.preventDefault();startDrag(e.clientX,e.clientY);});
   document.addEventListener('mousemove',e=>{moveDrag(e.clientX,e.clientY);});
@@ -1864,7 +1871,7 @@ const initInventoryMenu = () => {
         div.classList.add('dragging');
         // Highlight valid targets
         document.querySelectorAll('.placed-item').forEach(pi=>{
-          if(pi.dataset.type==='shelf'||pi.dataset.type==='rack')pi.classList.add('highlight-target');
+          if(pi.dataset.type==='shelf'||pi.dataset.type==='rack'||pi.dataset.type==='mannequin')pi.classList.add('highlight-target');
         });
       };
       const moveInvDrag=(cx,cy)=>{
@@ -1878,7 +1885,7 @@ const initInventoryMenu = () => {
         document.querySelectorAll('.placed-item.highlight-target').forEach(pi=>pi.classList.remove('highlight-target'));
         // Check if dropped on a shelf or rack
         const area=document.getElementById('shop-area');
-        const targets=area.querySelectorAll('.placed-item[data-type="shelf"],.placed-item[data-type="rack"]');
+        const targets=area.querySelectorAll('.placed-item[data-type="shelf"],.placed-item[data-type="rack"],.placed-item[data-type="mannequin"]');
         for(const target of targets){
           const r=target.getBoundingClientRect();
           if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){
@@ -1905,22 +1912,43 @@ const initInventoryMenu = () => {
 };
 
 const placeClothingOnFurniture = (target,item,invIdx) => {
-  const isRack=target.dataset.type==='rack';
-  const existing=target.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const tType=target.dataset.type;
+  const isRack=tType==='rack';
+  const isMannequin=tType==='mannequin';
+  const isShelf=tType==='shelf';
+  const existing=target.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin,.clothing-on-mannequin').length;
   if(isRack&&existing>=4)return;
-  if(!isRack&&existing>=3)return;
+  if(isShelf&&existing>=3)return;
+  if(isMannequin&&existing>=1)return;
   // Find actual index in case inventory shifted
   const actualIdx=inventory.indexOf(item);
   if(actualIdx===-1)return;
   invIdx=actualIdx;
 
   const el=document.createElement('canvas');
-  el.className=isRack?'clothing-on-rack':'clothing-on-shelf';
+  el.className=isRack?'clothing-on-rack':isMannequin?'clothing-on-mannequin':'clothing-on-shelf';
   el.dataset.clothingGraphic=item.graphic||'none';
   el.dataset.clothingColor=item.color;
   el.dataset.clothingType=item.type;
 
-  if(isRack){
+  if(isMannequin){
+    el.width=16;el.height=20;
+    el.style.width='16px';el.style.height='20px';
+    // Draw shirt on mannequin body
+    const mc=el.getContext('2d');
+    const c=CLOTHING_COLORS[item.color],cH=shade(c,20),cS=shade(c,-25),cD=shade(c,-45);
+    rect(mc,3,2,10,14,c);rect(mc,3,2,4,14,cH);rect(mc,9,2,4,14,cS);
+    rect(mc,0,2,3,8,c);rect(mc,13,2,3,8,cS);
+    rect(mc,5,0,6,3,cD);
+    if(item.graphic&&item.graphic!=='none'){
+      const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+      drawClothingGraphic(tc.getContext('2d'),item.graphic,0,0);
+      mc.imageSmoothingEnabled=false;
+      mc.drawImage(tc,5,5,6,5);
+    }
+    el.style.position='absolute';
+    el.style.left='4px';el.style.top='8px';
+  } else if(isRack){
     el.width=12;el.height=18;
     el.style.width='12px';el.style.height='18px';
     drawHangingTshirt(el.getContext('2d'),CLOTHING_COLORS[item.color],item.graphic,12,18);
@@ -2014,7 +2042,7 @@ document.getElementById('shop-tab').onclick=()=>{
 
 // ============ DONE PLACING → START DAY ============
 document.getElementById('done-placing-btn').onclick=()=>{
-  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf');
+  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin');
   if(placed.length===0)return;
   document.getElementById('done-placing-btn').style.display='none';
   document.getElementById('inventory-menu').style.display='none';
@@ -2041,7 +2069,7 @@ const buildCustomerSprite = (seed) => {
 
 const getClothingOnDisplay = () => {
   const items=[];
-  document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').forEach(el=>{
+  document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').forEach(el=>{
     const parent=el.closest('.placed-item');
     if(parent){
       const pr=parent.getBoundingClientRect();
@@ -2218,7 +2246,7 @@ const dayLoop = () => {
   }
 
   // Check if all clothing gone and no customers left
-  const remainingClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const remainingClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   const activeCust=customers.filter(c=>c.state!=='leaving').length;
   if(remainingClothing===0&&activeCust===0&&customers.length===0){
     dayRunning=false;
@@ -2246,13 +2274,13 @@ const startDay = () => {
   document.getElementById('money-tab').textContent='$'+money;
 
   // Count total clothing on display
-  const totalClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const totalClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   let spawned=0;
 
   // Spawn customers one by one with delays
   const spawnNext = () => {
     if(!dayRunning)return;
-    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
     const busyCust=customers.filter(c=>c.targetClothing&&c.state!=='leaving').length;
     if(spawned<totalClothing&&remaining>0||busyCust<remaining){
       if(remaining>0&&customers.filter(c=>c.state!=='leaving').length<3){
@@ -2299,7 +2327,7 @@ document.getElementById('shop-name-ok').onclick=()=>{
 const origPlaceClothing=placeClothingOnFurniture;
 // We need to show "Done" button after placing first clothing
 const checkShowDonePlacing = () => {
-  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const placed=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   const sdBtn=document.getElementById('start-day-btn');
   if(placed>0&&sdBtn.style.display!=='inline-block'&&!dayRunning){
     document.getElementById('done-placing-btn').style.display='inline-block';
@@ -2897,7 +2925,7 @@ const endDay = () => {
   // Show day ended message
   const overlay=document.getElementById('sold-out-overlay');
   overlay.querySelector('h1').textContent='DAY OVER!';
-  const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf').length;
+  const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
   overlay.querySelector('p').textContent=remaining>0?remaining+' item(s) left unsold.':'All clothes sold!';
   overlay.style.display='flex';
 };
