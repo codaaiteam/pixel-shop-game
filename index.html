@@ -705,7 +705,7 @@ let walkFrame=0,walkDir='down',walkTimer=0;
 const WALK_SPEED=6;
 
 // Build a 32x32 character sprite map
-const buildCharMap = (p,frame,dir,elderly) => {
+const buildCharMap = (p,frame,dir,elderly,mood) => {
   if(!p)p=player;if(!frame)frame=0;if(!dir)dir='down';
   const _=0; // transparent
   const sk=SKINS[p.skin],skH=shade(sk,18),skS=shade(sk,-25),skD=shade(sk,-50);
@@ -722,6 +722,8 @@ const buildCharMap = (p,frame,dir,elderly) => {
   const glassColor=p.customGlasses||'#c0a870';
   // Undershirt for cardigan
   const underColor=p.customUndershirt||'#f0e8d8';
+  // Mood: 'mad','disappointed' or undefined (normal)
+  const isMad=mood==='mad'||mood==='disappointed';
 
   // Create empty 32x32
   const m=Array.from({length:32},()=>Array(32).fill(_));
@@ -747,14 +749,20 @@ const buildCharMap = (p,frame,dir,elderly) => {
       s(17,7+by+hOff,'#fff');s(18,7+by+hOff,'#fff');s(17,8+by+hOff,ey);s(18,8+by+hOff,shade(ey,-20));
       // Nose
       s(15,9+by+hOff,skS);s(16,9+by+hOff,skD);
-      // Mouth - elderly have gentle smile
-      if(isOld){
+      // Mouth
+      if(isMad){
+        // Mad/disappointed frown
+        s(14,11+by+hOff,'#a03030');s(15,10+by+hOff,'#a03030');s(16,10+by+hOff,'#802020');s(17,11+by+hOff,'#802020');
+        // Angry eyebrows
+        s(13,6+by+hOff,'#302818');s(14,7+by+hOff,'#302818');// left brow angled down
+        s(18,7+by+hOff,'#302818');s(17,6+by+hOff,'#302818');// right brow angled down
+      }else if(isOld){
         s(14,10+by+hOff,skS);s(15,10+by+hOff,skD);s(16,10+by+hOff,skD);s(17,10+by+hOff,skS);
       }else{
         s(14,10+by+hOff,'#c04838');s(15,10+by+hOff,'#c04838');s(16,10+by+hOff,'#a83828');s(17,10+by+hOff,'#a83828');
       }
-      // Cheek blush
-      s(12,9+by+hOff,'#e8a088');s(19,9+by+hOff,'#d89878');
+      // Cheek blush (not when mad)
+      if(!isMad){s(12,9+by+hOff,'#e8a088');s(19,9+by+hOff,'#d89878');}
     }
 
     // === HAIR ===
@@ -968,9 +976,9 @@ const buildCharMap = (p,frame,dir,elderly) => {
   return m;
 };
 
-const drawChar = (canvas,p,frame,dir,elderly) => {
+const drawChar = (canvas,p,frame,dir,elderly,mood) => {
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,32,32);
-  drawSprite(ctx,buildCharMap(p,frame,dir,elderly),0,0);
+  drawSprite(ctx,buildCharMap(p,frame,dir,elderly,mood),0,0);
 };
 
 // === NPC sprite ===
@@ -2408,7 +2416,7 @@ const moveToward = (cust,tx,ty,speed) => {
   const dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
   cust.timer++;
   if(cust.timer>=animDelay){cust.timer=0;cust.frame=(cust.frame+1)%4;}
-  drawChar(cust.canvas,cust.data,cust.frame,dir,elderly);
+  drawChar(cust.canvas,cust.data,cust.frame,dir,elderly,cust.mood);
   cust.el.style.left=Math.round(cust.x)+'px';
   cust.el.style.top=Math.round(cust.y)+'px';
   return false;
@@ -2470,13 +2478,16 @@ const dayLoop = () => {
         if(dayCount>=3&&avail.length>0){
           const isWhiteHaired=cust.data&&(cust.data.hairColor===6||cust.isAlyssa);
           if(isWhiteHaired){
-            // Prefers solid or floral only
             const preferred=avail.filter(c=>c.graphic==='none'||c.graphic==='flowers');
             if(preferred.length>0)avail=preferred;
           }
         }
         if(avail.length===0){
-          cust.state='leaving';
+          // No clothes available — mad face and leave
+          cust.mood='mad';
+          cust.state='leaving_mad';
+          cust._madTimer=50;// pause briefly to show mad face
+          drawChar(cust.canvas,cust.data,0,'down',isElderly(cust),'mad');
           continue;
         }
         const pick=avail[Math.floor(Math.random()*avail.length)];
@@ -2488,6 +2499,43 @@ const dayLoop = () => {
         // Arrived at clothing - pick it up
         cust.state='picking_up';
         cust.pickTimer=40;
+      }
+    }
+    else if(cust.state==='browsing'){
+      // Browsing customer — walk to random spots, look around, then leave
+      if(!cust._browseTargets){
+        // Pick 2-3 random spots to walk to
+        const spots=[];
+        const numSpots=2+Math.floor(Math.random()*2);
+        for(let s=0;s<numSpots;s++){
+          spots.push({x:120+Math.random()*500,y:220+Math.random()*180});
+        }
+        cust._browseTargets=spots;
+        cust._browseIdx=0;
+        cust._browsePause=0;
+      }
+      if(cust._browsePause>0){
+        // Pausing to "look" at a display
+        cust._browsePause--;
+        drawChar(cust.canvas,cust.data,0,'down',isElderly(cust));
+      } else if(cust._browseIdx<cust._browseTargets.length){
+        const target=cust._browseTargets[cust._browseIdx];
+        if(moveToward(cust,target.x,target.y,1.2)){
+          cust._browseIdx++;
+          cust._browsePause=40+Math.floor(Math.random()*30);// pause 40-70 frames to browse
+        }
+      } else {
+        // Done browsing, leave normally
+        cust.state='leaving';
+      }
+    }
+    else if(cust.state==='leaving_mad'){
+      // Show mad face briefly, then walk out
+      if(cust._madTimer>0){
+        cust._madTimer--;
+        drawChar(cust.canvas,cust.data,0,'down',isElderly(cust),'mad');
+      } else {
+        cust.state='leaving';
       }
     }
     else if(cust.state==='picking_up'){
@@ -2536,11 +2584,18 @@ const dayLoop = () => {
 
   // Check if day should end naturally
   const remainingClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
-  const activeCust=customers.filter(c=>c.state!=='leaving').length;
+  const activeCust=customers.filter(c=>c.state!=='leaving'&&c.state!=='leaving_mad').length;
   const allDone=customers.length===0&&allSpawned;
+  const dayElapsed=Date.now()-dayStartTime;
+  const minDayMs=60000;// 1 minute minimum
+
+  // Don't auto-end the day before 1 minute has passed
+  if(dayElapsed<minDayMs){
+    requestAnimationFrame(dayLoop);
+    return;
+  }
 
   if(remainingClothing===0&&activeCust===0&&customers.length===0){
-    // Sold out — all clothes gone
     dayRunning=false;
     document.getElementById('end-day-btn').style.display='none';
     const ov=document.getElementById('sold-out-overlay');
@@ -2551,7 +2606,6 @@ const dayLoop = () => {
   }
 
   if(allDone&&activeCust===0){
-    // All customers for today have come and gone, but clothes remain
     dayRunning=false;
     document.getElementById('end-day-btn').style.display='none';
     const ov=document.getElementById('sold-out-overlay');
@@ -2564,9 +2618,12 @@ const dayLoop = () => {
   requestAnimationFrame(dayLoop);
 };
 
+let dayStartTime=0;
+
 const startDay = () => {
   dayCount++;
   dayRunning=true;
+  dayStartTime=Date.now();
   document.getElementById('start-day-btn').style.display='none';
   document.getElementById('design-btn').style.display='none';
   document.getElementById('shop-tab').style.display='none';
@@ -2576,29 +2633,53 @@ const startDay = () => {
   document.getElementById('money-tab').style.display='block';
   document.getElementById('money-tab').textContent='$'+money;
 
-  // Random number of customers for the day (not tied to clothing count)
+  // Random number of buying customers (40-90% of clothing)
   const totalClothing=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
-  // Base: 40-90% of clothing count, with randomness; minimum 1, and varies by day
   const minCust=Math.max(1,Math.floor(totalClothing*0.4));
   const maxCust=Math.max(minCust,Math.ceil(totalClothing*0.9));
-  const maxCustomersToday=minCust+Math.floor(Math.random()*(maxCust-minCust+1));
+  const maxBuyersToday=minCust+Math.floor(Math.random()*(maxCust-minCust+1));
+  // Additional browsing customers (20-40% of buyer count, at least 1)
+  const numBrowsers=Math.max(1,Math.floor(maxBuyersToday*(0.2+Math.random()*0.2)));
+  const maxCustomersToday=maxBuyersToday+numBrowsers;
   let spawned=0;
+  let buyersSpawned=0;
   let allSpawned=false;
 
-  // Spawn customers one by one with delays, up to the daily limit
+  // Spawn customers throughout the day with delays
   const spawnNext = () => {
     if(!dayRunning)return;
-    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
-    if(spawned>=maxCustomersToday||remaining===0){
+    if(spawned>=maxCustomersToday){
       allSpawned=true;
       return;
     }
-    if(remaining>0&&customers.filter(c=>c.state!=='leaving').length<3){
-      customers.push(spawnCustomer());
-      spawned++;
+    const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
+    if(customers.filter(c=>c.state!=='leaving'&&c.state!=='leaving_mad').length<3){
+      // Decide: buyer or browser
+      const canBuy=buyersSpawned<maxBuyersToday&&remaining>0;
+      const browsersLeft=spawned-buyersSpawned<numBrowsers;
+      if(canBuy&&(!browsersLeft||Math.random()>0.3)){
+        // Spawn a buying customer
+        customers.push(spawnCustomer());
+        buyersSpawned++;
+        spawned++;
+      } else if(remaining===0&&spawned<maxCustomersToday){
+        // No clothes left — new customers enter, see nothing, get mad and leave
+        const c=spawnCustomer();
+        // Will naturally find no clothes and go to leaving_mad state
+        customers.push(c);
+        spawned++;
+      } else {
+        // Spawn a browsing customer
+        const bc=spawnCustomer();
+        bc.state='browsing';
+        customers.push(bc);
+        spawned++;
+      }
     }
-    if(spawned<maxCustomersToday&&remaining>0){
-      setTimeout(spawnNext,2000+Math.random()*2000);
+    if(spawned<maxCustomersToday){
+      // Spread customers across the minute
+      const delay=3000+Math.random()*4000;
+      setTimeout(spawnNext,delay);
     } else {
       allSpawned=true;
     }
@@ -2607,16 +2688,20 @@ const startDay = () => {
   // Start first customer after brief delay
   setTimeout(()=>{
     const remaining=document.querySelectorAll('.clothing-on-rack,.clothing-on-shelf,.clothing-on-mannequin').length;
-    if(remaining===0){allSpawned=true;return;}
-    customers.push(spawnCustomer());
+    if(remaining>0){
+      customers.push(spawnCustomer());
+      buyersSpawned++;
+    }else{
+      const bc=spawnCustomer();bc.state='browsing';customers.push(bc);
+    }
     spawned++;
     // Spawn Alyssa on every other day starting day 2
     if(dayCount>=2&&dayCount%2===0){
       setTimeout(()=>{
-        if(spawned<maxCustomersToday){customers.push(spawnAlyssa());spawned++;}
+        if(spawned<maxCustomersToday){customers.push(spawnAlyssa());spawned++;buyersSpawned++;}
       },2000);
     }
-    if(spawned<maxCustomersToday)setTimeout(spawnNext,3000);
+    if(spawned<maxCustomersToday)setTimeout(spawnNext,4000);
     else allSpawned=true;
   },1000);
 
