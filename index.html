@@ -705,16 +705,23 @@ let walkFrame=0,walkDir='down',walkTimer=0;
 const WALK_SPEED=6;
 
 // Build a 32x32 character sprite map
-const buildCharMap = (p,frame,dir) => {
+const buildCharMap = (p,frame,dir,elderly) => {
   if(!p)p=player;if(!frame)frame=0;if(!dir)dir='down';
   const _=0; // transparent
   const sk=SKINS[p.skin],skH=shade(sk,18),skS=shade(sk,-25),skD=shade(sk,-50);
   const ey=EYES[p.eyes];
   const hc=HAIR_COLORS[p.hairColor],hcH=shade(hc,20),hcS=shade(hc,-20);
-  const sh=SHIRT_COLORS[p.shirtColor],shH=shade(sh,20),shS=shade(sh,-25),shD=shade(sh,-45);
+  // Support custom shirt color (Alyssa's mint cardigan)
+  const sh=p.customShirtColor||SHIRT_COLORS[p.shirtColor],shH=shade(sh,20),shS=shade(sh,-25),shD=shade(sh,-45);
   const pt=PANTS_COLORS[p.pants],ptH=shade(pt,15),ptS=shade(pt,-20);
   const bt='#4a3020',btH='#5a3828',btS='#3a2018';
   const bounce=(frame===1||frame===3)?1:0;
+  // Elderly characters: detect from data or parameter
+  const isOld=elderly||p.isElderly||false;
+  // Glasses color: custom (Alyssa's red) or default gold
+  const glassColor=p.customGlasses||'#c0a870';
+  // Undershirt for cardigan
+  const underColor=p.customUndershirt||'#f0e8d8';
 
   // Create empty 32x32
   const m=Array.from({length:32},()=>Array(32).fill(_));
@@ -723,55 +730,70 @@ const buildCharMap = (p,frame,dir) => {
 
   const by=bounce; // bounce offset
 
+  // Elderly head offset: head shifts down 1px more for stooped posture
+  const hOff=isOld?1:0;
+
   if(dir==='down'||dir==='up'){
     // === HEAD ===
-    fillR(11,3+by,10,10,sk);   // base head
-    fillR(11,3+by,3,10,skH);   // left highlight
-    fillR(18,3+by,3,10,skS);   // right shadow
+    fillR(11,3+by+hOff,10,10,sk);   // base head
+    fillR(11,3+by+hOff,3,10,skH);   // left highlight
+    fillR(18,3+by+hOff,3,10,skS);   // right shadow
     // Ears
-    s(10,7+by,sk);s(10,8+by,skS);s(21,7+by,skS);s(21,8+by,skD);
+    s(10,7+by+hOff,sk);s(10,8+by+hOff,skS);s(21,7+by+hOff,skS);s(21,8+by+hOff,skD);
 
     if(dir==='down'){
       // Eyes
-      s(13,7+by,'#fff');s(14,7+by,'#fff');s(13,8+by,ey);s(14,8+by,shade(ey,-20));
-      s(17,7+by,'#fff');s(18,7+by,'#fff');s(17,8+by,ey);s(18,8+by,shade(ey,-20));
+      s(13,7+by+hOff,'#fff');s(14,7+by+hOff,'#fff');s(13,8+by+hOff,ey);s(14,8+by+hOff,shade(ey,-20));
+      s(17,7+by+hOff,'#fff');s(18,7+by+hOff,'#fff');s(17,8+by+hOff,ey);s(18,8+by+hOff,shade(ey,-20));
       // Nose
-      s(15,9+by,skS);s(16,9+by,skD);
-      // Mouth
-      s(14,10+by,'#c04838');s(15,10+by,'#c04838');s(16,10+by,'#a83828');s(17,10+by,'#a83828');
+      s(15,9+by+hOff,skS);s(16,9+by+hOff,skD);
+      // Mouth - elderly have gentle smile
+      if(isOld){
+        s(14,10+by+hOff,skS);s(15,10+by+hOff,skD);s(16,10+by+hOff,skD);s(17,10+by+hOff,skS);
+      }else{
+        s(14,10+by+hOff,'#c04838');s(15,10+by+hOff,'#c04838');s(16,10+by+hOff,'#a83828');s(17,10+by+hOff,'#a83828');
+      }
       // Cheek blush
-      s(12,9+by,'#e8a088');s(19,9+by,'#d89878');
+      s(12,9+by+hOff,'#e8a088');s(19,9+by+hOff,'#d89878');
     }
 
     // === HAIR ===
     const hi=p.hair;
     if(hi===0){// Short
-      fillR(10,1+by,12,3,hc);fillR(10,1+by,4,3,hcH);fillR(18,1+by,4,3,hcS);
-      fillR(10,4+by,2,4,hc);fillR(20,4+by,2,4,hcS);
+      fillR(10,1+by+hOff,12,3,hc);fillR(10,1+by+hOff,4,3,hcH);fillR(18,1+by+hOff,4,3,hcS);
+      fillR(10,4+by+hOff,2,4,hc);fillR(20,4+by+hOff,2,4,hcS);
     }else if(hi===1){// Long
-      fillR(10,1+by,12,3,hc);fillR(10,1+by,4,3,hcH);fillR(18,1+by,4,3,hcS);
-      fillR(9,4+by,2,10,hc);fillR(21,4+by,2,10,hcS);
-      fillR(9,14+by,3,2,hc);fillR(20,14+by,3,2,hcS);
+      fillR(10,1+by+hOff,12,3,hc);fillR(10,1+by+hOff,4,3,hcH);fillR(18,1+by+hOff,4,3,hcS);
+      fillR(9,4+by+hOff,2,10,hc);fillR(21,4+by+hOff,2,10,hcS);
+      fillR(9,14+by+hOff,3,2,hc);fillR(20,14+by+hOff,3,2,hcS);
     }else if(hi===2){// Spiky
-      fillR(10,2+by,12,2,hc);
-      s(10,0+by,hc);s(13,0+by,hcH);s(16,0+by,hc);s(19,0+by,hcS);s(22,0+by,hcS);
-      s(11,1+by,hcH);s(14,1+by,hc);s(17,1+by,hcS);s(20,1+by,hcS);
-      fillR(10,4+by,2,2,hc);fillR(20,4+by,2,2,hcS);
+      fillR(10,2+by+hOff,12,2,hc);
+      s(10,0+by+hOff,hc);s(13,0+by+hOff,hcH);s(16,0+by+hOff,hc);s(19,0+by+hOff,hcS);s(22,0+by+hOff,hcS);
+      s(11,1+by+hOff,hcH);s(14,1+by+hOff,hc);s(17,1+by+hOff,hcS);s(20,1+by+hOff,hcS);
+      fillR(10,4+by+hOff,2,2,hc);fillR(20,4+by+hOff,2,2,hcS);
     }else if(hi===3){// Buzz
-      fillR(11,2+by,10,2,hc);fillR(11,2+by,3,2,hcH);fillR(18,2+by,3,2,hcS);
+      fillR(11,2+by+hOff,10,2,hc);fillR(11,2+by+hOff,3,2,hcH);fillR(18,2+by+hOff,3,2,hcS);
     }else if(hi===4){// Mohawk
-      fillR(14,0+by,4,4,hc);fillR(14,0+by,2,4,hcH);fillR(16,0+by,2,4,hcS);
-      fillR(12,3+by,8,2,hc);
+      fillR(14,0+by+hOff,4,4,hc);fillR(14,0+by+hOff,2,4,hcH);fillR(16,0+by+hOff,2,4,hcS);
+      fillR(12,3+by+hOff,8,2,hc);
     }else if(hi===5){// Curly
-      fillR(9,1+by,14,3,hc);
-      for(let x=9;x<23;x+=2){s(x,0+by,hcH);s(x+1,0+by,hc);}
-      fillR(9,4+by,2,5,hc);fillR(21,4+by,2,5,hcS);
-      fillR(9,4+by,2,5,hcH);
+      if(isOld){
+        // Elderly curly = hair bun on top
+        fillR(13,0+by+hOff,6,3,hc);fillR(14,0+by+hOff,4,1,hcH);fillR(13,2+by+hOff,6,1,hcS);
+        fillR(10,3+by+hOff,12,2,hc);fillR(10,3+by+hOff,4,2,hcH);fillR(18,3+by+hOff,4,2,hcS);
+        // Hair framing face
+        s(10,5+by+hOff,hc);s(10,6+by+hOff,hcH);s(21,5+by+hOff,hcS);s(21,6+by+hOff,hcS);
+      }else{
+        fillR(9,1+by+hOff,14,3,hc);
+        for(let x=9;x<23;x+=2){s(x,0+by+hOff,hcH);s(x+1,0+by+hOff,hc);}
+        fillR(9,4+by+hOff,2,5,hc);fillR(21,4+by+hOff,2,5,hcS);
+        fillR(9,4+by+hOff,2,5,hcH);
+      }
     }else if(hi===6){// Ponytail
-      fillR(10,1+by,12,3,hc);fillR(10,1+by,4,3,hcH);fillR(18,1+by,4,3,hcS);
-      fillR(10,4+by,2,3,hc);fillR(20,4+by,2,3,hcS);
+      fillR(10,1+by+hOff,12,3,hc);fillR(10,1+by+hOff,4,3,hcH);fillR(18,1+by+hOff,4,3,hcS);
+      fillR(10,4+by+hOff,2,3,hc);fillR(20,4+by+hOff,2,3,hcS);
       // Ponytail flowing back
-      fillR(22,4+by,2,4,hcS);fillR(23,6+by,2,4,hc);fillR(24,9+by,2,3,hcS);
+      fillR(22,4+by+hOff,2,4,hcS);fillR(23,6+by+hOff,2,4,hc);fillR(24,9+by+hOff,2,3,hcS);
     }
     // hi===7 = None
 
@@ -798,8 +820,8 @@ const buildCharMap = (p,frame,dir) => {
     }else if(sty===4){// Cardigan
       fillR(8,13+by,2,6,sh);fillR(22,13+by,2,6,shS);// long sleeves
       fillR(7,13+by,1,5,shD);fillR(24,13+by,1,5,shD);
-      // Open front - show undershirt
-      fillR(14,14+by,4,5,'#f0e8d8');fillR(14,14+by,2,5,'#f8f0e0');
+      // Open front - show undershirt (use custom color if available)
+      fillR(14,14+by,4,5,underColor);fillR(14,14+by,2,5,shade(underColor,10));
       // Cardigan edges
       s(13,14+by,shD);s(13,15+by,shD);s(13,16+by,shD);s(13,17+by,shD);s(13,18+by,shD);
       s(18,14+by,shD);s(18,15+by,shD);s(18,16+by,shD);s(18,17+by,shD);s(18,18+by,shD);
@@ -834,38 +856,57 @@ const buildCharMap = (p,frame,dir) => {
 
   } else {
     // SIDE VIEW (right direction - will be mirrored for left)
-    // Always draw as facing right, then mirror the entire map for left
-    // Head
-    for(let y=3+by;y<13+by;y++)for(let x=12;x<21;x++)s(x,y,x<15?skH:x>18?skS:sk);
-    s(11,7+by,sk);s(11,8+by,skS);// ear
+    // Elderly: head shifts forward 1px (toward facing direction) for stoop
+    const sideHOff=isOld?1:0;
+    // Head — elderly shifts head down+forward for bent posture
+    for(let y=3+by+sideHOff;y<13+by+sideHOff;y++)for(let x=12+sideHOff;x<21+sideHOff;x++)s(x,y,x<15+sideHOff?skH:x>18+sideHOff?skS:sk);
+    s(11+sideHOff,7+by+sideHOff,sk);s(11+sideHOff,8+by+sideHOff,skS);// ear
 
     // Face features - facing right
-    s(18,7+by,'#fff');s(19,7+by,'#fff');s(18,8+by,ey);s(19,8+by,shade(ey,-20));
-    s(19,10+by,'#c04838');
-    s(20,9+by,'#e8a088');
+    s(18+sideHOff,7+by+sideHOff,'#fff');s(19+sideHOff,7+by+sideHOff,'#fff');s(18+sideHOff,8+by+sideHOff,ey);s(19+sideHOff,8+by+sideHOff,shade(ey,-20));
+    if(isOld){
+      s(19+sideHOff,10+by+sideHOff,skS);// gentle smile
+    }else{
+      s(19+sideHOff,10+by+sideHOff,'#c04838');
+    }
+    s(20+sideHOff,9+by+sideHOff,'#e8a088');
+    // Side glasses for elderly
+    if(isOld&&p.accessory===1){
+      s(18+sideHOff,7+by+sideHOff,glassColor);s(19+sideHOff,7+by+sideHOff,glassColor);
+      s(20+sideHOff,7+by+sideHOff,glassColor);
+    }
 
     // Hair (side view)
-    const hi=p.hair;
-    if(hi!==7&&hi!==3){
-      fillR(11,1+by,10,3,hc);
-      for(let x=11;x<15;x++)for(let y=1+by;y<4+by;y++)s(x,y,hcH);
-      for(let x=18;x<21;x++)for(let y=1+by;y<4+by;y++)s(x,y,hcS);
-      s(11,4+by,hc);s(11,5+by,hc);
-      if(hi===1||hi===5){// long/curly
-        for(let y=6+by;y<14+by;y++)s(11,y,hc);
-        for(let y=6+by;y<14+by;y++)s(10,y,hcS);
-      }
-      if(hi===6){// ponytail - flows behind
-        s(21,4+by,hc);s(22,5+by,hcS);s(23,6+by,hc);s(23,7+by,hcS);s(22,8+by,hc);
+    const hi2=p.hair;
+    if(hi2!==7&&hi2!==3){
+      if(isOld&&hi2===5){
+        // Bun side view
+        fillR(12+sideHOff,1+by+sideHOff,9,3,hc);
+        fillR(12+sideHOff,1+by+sideHOff,3,3,hcH);fillR(18+sideHOff,1+by+sideHOff,3,3,hcS);
+        // Bun bump on top
+        fillR(14+sideHOff,0+by+sideHOff,4,2,hc);fillR(15+sideHOff,0+by+sideHOff,2,1,hcH);
+        s(11+sideHOff,4+by+sideHOff,hc);s(11+sideHOff,5+by+sideHOff,hc);
+      }else{
+        fillR(11+sideHOff,1+by+sideHOff,10,3,hc);
+        for(let x=11+sideHOff;x<15+sideHOff;x++)for(let y=1+by+sideHOff;y<4+by+sideHOff;y++)s(x,y,hcH);
+        for(let x=18+sideHOff;x<21+sideHOff;x++)for(let y=1+by+sideHOff;y<4+by+sideHOff;y++)s(x,y,hcS);
+        s(11+sideHOff,4+by+sideHOff,hc);s(11+sideHOff,5+by+sideHOff,hc);
+        if(hi2===1||hi2===5){// long/curly
+          for(let y=6+by+sideHOff;y<14+by+sideHOff;y++)s(11+sideHOff,y,hc);
+          for(let y=6+by+sideHOff;y<14+by+sideHOff;y++)s(10+sideHOff,y,hcS);
+        }
+        if(hi2===6){// ponytail
+          s(21+sideHOff,4+by+sideHOff,hc);s(22+sideHOff,5+by+sideHOff,hcS);s(23+sideHOff,6+by+sideHOff,hc);s(23+sideHOff,7+by+sideHOff,hcS);s(22+sideHOff,8+by+sideHOff,hc);
+        }
       }
     }
-    if(hi===3){fillR(12,2+by,8,2,hc);}
-    if(hi===4){fillR(14,0+by,4,4,hc);fillR(13,3+by,6,1,hcS);}
+    if(hi2===3){fillR(12+sideHOff,2+by+sideHOff,8,2,hc);}
+    if(hi2===4){fillR(14+sideHOff,0+by+sideHOff,4,4,hc);fillR(13+sideHOff,3+by+sideHOff,6,1,hcS);}
 
     // Body
     for(let y=13+by;y<20+by;y++)for(let x=11;x<21;x++)s(x,y,x<14?shH:x>18?shS:sh);
-    // Arm
-    const armOff=frame===1?-1:frame===3?1:0;
+    // Arm — elderly arm swings less
+    const armOff=isOld?(frame===1?0:frame===3?0:0):(frame===1?-1:frame===3?1:0);
     s(10,14+by+armOff,sk);s(10,15+by+armOff,sk);s(10,16+by+armOff,skS);
 
     // Legs
@@ -904,26 +945,32 @@ const buildCharMap = (p,frame,dir) => {
   const acc=p.accessory;
   if(acc===1){// Glasses
     if(dir==='down'){
-      s(12,7+bounce,'#c0a870');s(15,7+bounce,'#c0a870');s(16,7+bounce,'#c0a870');s(19,7+bounce,'#c0a870');
+      // Use custom glasses color (red for Alyssa, gold for others)
+      s(12,7+bounce+hOff,glassColor);s(15,7+bounce+hOff,glassColor);s(16,7+bounce+hOff,glassColor);s(19,7+bounce+hOff,glassColor);
+      // Add frames around eyes for reading glasses look when elderly
+      if(isOld){
+        s(12,8+bounce+hOff,glassColor);s(14,7+bounce+hOff,glassColor);
+        s(17,7+bounce+hOff,glassColor);s(19,8+bounce+hOff,glassColor);
+      }
     }
   }else if(acc===2){// Headband
-    if(dir==='down'||dir==='up')for(let x=10;x<22;x++)s(x,3+bounce,x%2?'#c83838':'#e85050');
+    if(dir==='down'||dir==='up')for(let x=10;x<22;x++)s(x,3+bounce+hOff,x%2?'#c83838':'#e85050');
   }else if(acc===3){// Scarf
     for(let x=10;x<22;x++)s(x,13+bounce,x%2?'#c83838':'#a82828');
   }else if(acc===4){// Earring
-    s(10,9+bounce,'#d8a830');
+    s(10,9+bounce+hOff,'#d8a830');
   }else if(acc===5){// Hat
     if(dir==='down'||dir==='up'){
-      fillR(9,0+bounce,14,2,'#6a4828');fillR(9,0+bounce,5,2,'#7a5838');
-      fillR(11,2+bounce,10,2,'#5a3818');fillR(11,2+bounce,4,2,'#6a4828');
+      fillR(9,0+bounce+hOff,14,2,'#6a4828');fillR(9,0+bounce+hOff,5,2,'#7a5838');
+      fillR(11,2+bounce+hOff,10,2,'#5a3818');fillR(11,2+bounce+hOff,4,2,'#6a4828');
     }
   }
   return m;
 };
 
-const drawChar = (canvas,p,frame,dir) => {
+const drawChar = (canvas,p,frame,dir,elderly) => {
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,32,32);
-  drawSprite(ctx,buildCharMap(p,frame,dir),0,0);
+  drawSprite(ctx,buildCharMap(p,frame,dir,elderly),0,0);
 };
 
 // === NPC sprite ===
@@ -2106,11 +2153,14 @@ const DOOR_X=644,DOOR_Y=220;// door entry position in shop area
 const spawnCustomer = () => {
   const seed=Math.random();
   const custData=buildCustomerSprite(seed);
+  // Mark white-haired customers as elderly
+  const whiteHaired=custData.hairColor===6;
+  if(whiteHaired)custData.isElderly=true;
   const div=document.createElement('div');
   div.className='customer-sprite';
   const c=document.createElement('canvas');c.width=32;c.height=32;
   c.style.width='64px';c.style.height='64px';
-  drawChar(c,custData);
+  drawChar(c,custData,0,'down',whiteHaired);
   div.appendChild(c);
   div.style.left=DOOR_X+'px';div.style.top=DOOR_Y+'px';
   document.getElementById('shop-area').appendChild(div);
@@ -2119,17 +2169,27 @@ const spawnCustomer = () => {
     targetX:0,targetY:0,carrying:null};
 };
 
+// Check if a customer is elderly (white hair or Alyssa)
+const isElderly = (cust) => {
+  return cust.isAlyssa||cust.data&&(cust.data.isElderly||cust.data.hairColor===6);
+};
+
 const moveToward = (cust,tx,ty,speed) => {
+  // Elderly customers move slower
+  const elderly=isElderly(cust);
+  const actualSpeed=elderly?speed*0.55:speed;
+  const animDelay=elderly?14:8; // slower step animation for elderly
+
   const dx=tx-cust.x,dy=ty-cust.y;
   const dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist<speed)return true;
-  cust.x+=dx/dist*speed;
-  cust.y+=dy/dist*speed;
+  if(dist<actualSpeed)return true;
+  cust.x+=dx/dist*actualSpeed;
+  cust.y+=dy/dist*actualSpeed;
   // Walk direction
   const dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
   cust.timer++;
-  if(cust.timer>=8){cust.timer=0;cust.frame=(cust.frame+1)%4;}
-  drawChar(cust.canvas,cust.data,cust.frame,dir);
+  if(cust.timer>=animDelay){cust.timer=0;cust.frame=(cust.frame+1)%4;}
+  drawChar(cust.canvas,cust.data,cust.frame,dir,elderly);
   cust.el.style.left=Math.round(cust.x)+'px';
   cust.el.style.top=Math.round(cust.y)+'px';
   return false;
@@ -2236,7 +2296,7 @@ const dayLoop = () => {
       if(Math.abs(cust.y-targetY)>2){
         moveToward(cust,regPos.x,targetY,1);
       } else {
-        drawChar(cust.canvas,cust.data,0,'up');
+        drawChar(cust.canvas,cust.data,0,'up',isElderly(cust));
       }
       // Only first in line can pay, strictly one at a time
       if(playerNearReg&&cust._queuePos===0&&!paidThisFrame&&Date.now()-lastPayTime>800){
@@ -2870,13 +2930,17 @@ const checkAlyssaMail = () => {
 };
 
 // ============ ALYSSA SPECIAL CUSTOMER ============
+// Alyssa: Black woman, white hair bun, red reading glasses, mint cardigan, cream undershirt
 const ALYSSA_DATA={
-  skin:4,eyes:1,hair:5,hairColor:6,shirtStyle:4,shirtColor:9,pants:0,accessory:1,name:'Alyssa'
+  skin:5,eyes:1,hair:5,hairColor:6,shirtStyle:4,shirtColor:9,pants:3,accessory:1,name:'Alyssa',
+  isElderly:true,
+  // Custom colors for Alyssa's unique outfit
+  customShirtColor:'#98d0a8', // mint watered-down green cardigan
+  customUndershirt:'#f0e8d0', // cream undershirt
+  customGlasses:'#c83030' // red reading glasses
 };
-// Override hair color to white for Alyssa
 const buildAlyssaSprite = () => {
   const p=Object.assign({},ALYSSA_DATA);
-  // White hair = index 6 in HAIR_COLORS ('#e8d8c8')
   return p;
 };
 
@@ -2887,7 +2951,7 @@ const spawnAlyssa = () => {
   div.style.position='relative';
   const c=document.createElement('canvas');c.width=32;c.height=32;
   c.style.width='64px';c.style.height='64px';
-  drawChar(c,custData);
+  drawChar(c,custData,0,'down',true);
   div.appendChild(c);
   // Name label if known
   if(alyssaKnown){
