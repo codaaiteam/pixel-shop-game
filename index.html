@@ -3279,7 +3279,6 @@ const spawnAlyssa = () => {
   const custData=buildAlyssaSprite();
   const div=document.createElement('div');
   div.className='customer-sprite';
-  div.style.position='relative';
   const c=document.createElement('canvas');c.width=32;c.height=32;
   c.style.width='64px';c.style.height='64px';
   drawChar(c,custData,0,'down',true);
@@ -3288,6 +3287,7 @@ const spawnAlyssa = () => {
   if(alyssaKnown){
     const label=document.createElement('div');
     label.className='customer-name-label';
+    label.style.position='absolute';
     label.textContent='Alyssa';
     div.appendChild(label);
   }
