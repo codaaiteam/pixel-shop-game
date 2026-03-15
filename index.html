@@ -591,6 +591,7 @@ body{
       <div id="inv-tabs">
         <div class="inv-tab" data-tab="furniture">Furniture</div>
         <div class="inv-tab active" data-tab="clothing">Clothing</div>
+        <div class="inv-tab" data-tab="saved">Saved</div>
         <div class="inv-tab" data-tab="decor">Decor</div>
         <div class="inv-tab" data-tab="paintings">Paintings</div>
       </div>
@@ -643,10 +644,19 @@ body{
       </div>
     </div>
     <div id="clothing-bottom">
+      <button class="sdv-btn" id="clothing-save-design" style="font-size:7px;background:linear-gradient(180deg,#4878b8 0%,#305898 100%);color:#f8e8c0;text-shadow:1px 1px #182848">SAVE DESIGN</button>
       <button class="sdv-btn" id="clothing-done" style="font-size:7px;background:linear-gradient(180deg,#c84040 0%,#a03030 100%);color:#f8e8c0;text-shadow:1px 1px #601818">DONE</button>
     </div>
   </div>
   <div id="locked-toast">Locked.</div>
+  <div id="save-design-popup" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;z-index:100;background:rgba(0,0,0,0.5);justify-content:center;align-items:center">
+    <div style="background:#c8a065;border:4px solid #5a3a18;box-shadow:inset 0 0 0 2px #e8c888,4px 4px 12px rgba(0,0,0,0.5);padding:16px 24px;display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#3a2210;text-shadow:1px 1px #d8b878">SAVED!</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6a5030">Name your design:</div>
+      <input type="text" id="design-name-input" placeholder="Design name..." maxlength="16" style="background:#f8f0d8;border:3px solid #5a3a18;color:#3a2210;padding:6px;font-family:'Press Start 2P',monospace;font-size:7px;text-align:center;width:180px;box-shadow:inset 0 2px 4px rgba(0,0,0,0.15)">
+      <button class="sdv-btn" id="design-name-ok" style="font-size:7px;padding:6px 16px;background:linear-gradient(180deg,#48a848 0%,#308830 100%);color:#f8e8c0;text-shadow:1px 1px #184818">OK</button>
+    </div>
+  </div>
 </div>
 <script>
 // ============ STARDEW-STYLE SPRITE ENGINE ============
@@ -1999,6 +2009,22 @@ const initClothingScreen = () => {
   drawClothingPreview();
 };
 
+// ============ SAVED DESIGNS ============
+let savedDesigns=[];// {name, type, color, graphic} — unlimited use templates
+
+document.getElementById('clothing-save-design').onclick=()=>{
+  document.getElementById('save-design-popup').style.display='flex';
+  document.getElementById('design-name-input').value='';
+  document.getElementById('design-name-input').focus();
+};
+
+document.getElementById('design-name-ok').onclick=()=>{
+  const name=document.getElementById('design-name-input').value.trim()||'Design '+(savedDesigns.length+1);
+  savedDesigns.push({name,type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
+  document.getElementById('save-design-popup').style.display='none';
+  if(typeof saveGame==='function')saveGame();
+};
+
 // ============ INVENTORY SYSTEM ============
 let inventory=[];// array of designed clothing objects
 let activeInvTab='clothing';
@@ -2132,6 +2158,34 @@ const initInventoryMenu = () => {
       div.addEventListener('touchstart',()=>{document.addEventListener('touchmove',tmh,{passive:false});document.addEventListener('touchend',tuh);},{passive:false});
       content.appendChild(div);
     });
+  } else if(activeInvTab==='saved'){
+    if(savedDesigns.length>0){
+      savedDesigns.forEach((sd,i)=>{
+        const div=document.createElement('div');div.className='inv-item';
+        div.style.cursor='pointer';div.style.flexDirection='column';div.style.position='relative';
+        const c=document.createElement('canvas');c.width=20;c.height=20;
+        c.style.width='36px';c.style.height='36px';
+        drawMiniTshirt(c.getContext('2d'),CLOTHING_COLORS[sd.color],20,20);
+        div.appendChild(c);
+        const label=document.createElement('span');
+        label.textContent=sd.name;
+        label.style.cssText='font-family:"Press Start 2P",monospace;font-size:3px;color:#3a2210;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46px;display:block;text-align:center';
+        div.appendChild(label);
+        // Click to produce a copy into inventory (unlimited use, no slot cost)
+        div.onclick=()=>{
+          const copy={type:sd.type,color:sd.color,graphic:sd.graphic};
+          inventory.push(copy);
+          activeInvTab='clothing';
+          initInventoryMenu();
+          showShopTab(true);
+        };
+        content.appendChild(div);
+      });
+    } else {
+      const msg=document.createElement('div');msg.className='inv-empty-msg';
+      msg.textContent='No saved designs yet. Save designs in the Design screen!';
+      content.appendChild(msg);
+    }
   } else {
     const msg=document.createElement('div');msg.className='inv-empty-msg';
     msg.textContent=activeInvTab==='clothing'?'No clothing designed yet.':'Empty.';
@@ -3416,6 +3470,7 @@ const buildSaveObject = () => ({
   unlockedClothingTypes:CLOTHING_TYPES.filter(t=>!t.locked).map(t=>t.id),
   unlockedGraphics:CLOTHING_GRAPHICS.filter(g=>!g.locked).map(g=>g.id),
   purchased:{...purchased},
+  savedDesigns:savedDesigns.map(sd=>({name:sd.name,type:sd.type,color:sd.color,graphic:sd.graphic})),
   ownedDecor:ownedDecor.map(d=>({itemKey:d.itemKey,id:d.id})),
   ownedAvatarClothes:ownedAvatarClothes.map(a=>({id:a.id,name:a.name,accIdx:a.accIdx})),
   mailMessages:mailMessages.map(m=>({id:m.id,from:m.from,email:m.email,read:m.read,text:m.text,pfpType:m.id&&m.id.startsWith('alyssa')?'alyssa':'generic'})),
@@ -3458,6 +3513,7 @@ const restoreState = (save) => {
   usedClothingSlots=save.usedClothingSlots||0;
   maxClothingSlots=save.maxClothingSlots||5;
   purchased=save.purchased||{};
+  savedDesigns=(save.savedDesigns||[]).slice();
   ownedDecor=(save.ownedDecor||[]).slice();
   ownedAvatarClothes=(save.ownedAvatarClothes||[]).slice();
 
