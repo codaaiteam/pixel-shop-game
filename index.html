@@ -2850,14 +2850,11 @@ const renderStoreMenu = () => {
         } else if(si.type==='slots'){
           maxClothingSlots+=si.amount;
           updateDesignBtn();
-        } else if(si.type==='furniture'){
-          placeItem(si.itemKey);
-          boughtFurniture=true;
-          // Show decorate hint
-          document.getElementById('shop-hint').textContent='New furniture added! You can rearrange your store.';
-          enableRedecorate();
-        } else if(si.type==='decor'){
+        } else if(si.type==='furniture'||si.type==='decor'){
           ownedDecor.push({itemKey:si.itemKey,id:si.id});
+          boughtFurniture=true;
+          document.getElementById('shop-hint').textContent='New item in your Decor tab! Open it to place.';
+          enableRedecorate();
         } else if(si.type==='avatar'){
           player.accessory=si.accIdx;
           updatePlayerSprite();
