@@ -2463,7 +2463,7 @@ const dayLoop = () => {
   const playerNearReg=Math.abs(playerPos.x-regPos.x)<60&&Math.abs(playerPos.y-regPos.y)<60;
 
   // Assign queue positions for customers waiting/walking to register
-  const queueCusts=customers.filter(c=>c.state==='walking_to_register'||c.state==='waiting_to_pay');
+  const queueCusts=customers.filter(c=>c.state==='walking_to_register'||c.state==='waiting_to_pay'||c.state==='paying');
   queueCusts.sort((a,b)=>(a._queueTime||0)-(b._queueTime||0));
   queueCusts.forEach((c,i)=>{c._queuePos=i;});
   let paidThisFrame=false;
@@ -2566,11 +2566,44 @@ const dayLoop = () => {
       } else {
         drawChar(cust.canvas,cust.data,0,'up',isElderly(cust));
       }
-      // Only first in line can pay, strictly one at a time
-      if(playerNearReg&&cust._queuePos===0&&!paidThisFrame&&Date.now()-lastPayTime>800){
+      // First in line starts 10-second payment process when player is near register
+      if(playerNearReg&&cust._queuePos===0&&!paidThisFrame){
+        if(!cust._payStart){
+          cust._payStart=Date.now();
+          cust.state='paying';
+        }
+      }
+    }
+    else if(cust.state==='paying'){
+      // 10-second payment countdown
+      drawChar(cust.canvas,cust.data,0,'up',isElderly(cust));
+      const elapsed=Date.now()-cust._payStart;
+      const payDuration=10000;// 10 seconds
+      // Show progress bar above customer
+      if(!cust._progressBar){
+        const bar=document.createElement('div');
+        bar.style.cssText='position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:40px;height:5px;background:#5a3a18;border:1px solid #3a2010;';
+        const fill=document.createElement('div');
+        fill.style.cssText='height:100%;width:0%;background:#48c848;transition:none;';
+        bar.appendChild(fill);
+        cust.el.appendChild(bar);
+        cust._progressBar=bar;
+        cust._progressFill=fill;
+      }
+      const pct=Math.min(100,elapsed/payDuration*100);
+      cust._progressFill.style.width=pct+'%';
+      // Player must stay near register
+      if(!playerNearReg){
+        // Player walked away — reset payment
+        cust._payStart=null;
+        cust.state='waiting_to_pay';
+        if(cust._progressBar){cust._progressBar.remove();cust._progressBar=null;cust._progressFill=null;}
+      } else if(elapsed>=payDuration){
+        // Payment complete
         paidThisFrame=true;
         lastPayTime=Date.now();
         updateMoney(10,cust.x,cust.y-20);
+        if(cust._progressBar){cust._progressBar.remove();cust._progressBar=null;cust._progressFill=null;}
         cust.state='leaving';
       }
     }
