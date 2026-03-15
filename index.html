@@ -1015,50 +1015,174 @@ const drawNPC = (canvas) => {
 // ============ CUTSCENE BG ============
 const drawCutsceneBG = (canvas) => {
   const ctx=canvas.getContext('2d'),W=620,H=260;
-  // Sky
-  const sky=ctx.createLinearGradient(0,0,0,140);
-  sky.addColorStop(0,'#6898c8');sky.addColorStop(0.6,'#98b8d8');sky.addColorStop(1,'#d8c8a0');
-  ctx.fillStyle=sky;ctx.fillRect(0,0,W,140);
-  // Clouds
-  rect(ctx,50,24,44,12,'#e8e0d8');rect(ctx,58,18,30,10,'#f0e8e0');
-  rect(ctx,200,40,36,10,'#e8e0d8');rect(ctx,206,34,24,10,'#f0e8e0');
-  rect(ctx,440,22,40,12,'#e8e0d8');rect(ctx,448,16,26,10,'#f0e8e0');
-  // Trees
-  for(let tx of[20,80,140,400,460,520]){
-    const th=30+Math.sin(tx)*12;
-    rect(ctx,tx+8,140-th-10,6,th+10,'#5a3818');
-    rect(ctx,tx,100-th,24,th,'#3a7830');rect(ctx,tx+2,102-th,10,th-4,'#48983840');
-    rect(ctx,tx,100-th,24,4,'#4a8838');
+
+  // === SKY — warm sunset gradient ===
+  const sky=ctx.createLinearGradient(0,0,0,120);
+  sky.addColorStop(0,'#88b8e0');sky.addColorStop(0.4,'#a8cce8');sky.addColorStop(0.8,'#e8d8b8');sky.addColorStop(1,'#f0e0c0');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,120);
+
+  // === CLOUDS ===
+  rect(ctx,40,18,50,10,'#f0ece8');rect(ctx,48,12,34,10,'#f8f4f0');
+  rect(ctx,180,28,40,8,'#f0ece8');rect(ctx,186,22,28,10,'#f8f4f0');
+  rect(ctx,420,14,44,10,'#f0ece8');rect(ctx,428,8,28,10,'#f8f4f0');
+  rect(ctx,540,30,36,8,'#f0ece8');rect(ctx,546,24,24,10,'#f8f4f0');
+
+  // === DISTANT HILLS ===
+  ctx.fillStyle='#88b878';
+  ctx.beginPath();ctx.moveTo(0,110);
+  for(let x=0;x<=W;x+=20)ctx.lineTo(x,105+Math.sin(x*0.015)*12+Math.cos(x*0.03)*6);
+  ctx.lineTo(W,130);ctx.lineTo(0,130);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#78a868';
+  ctx.beginPath();ctx.moveTo(0,115);
+  for(let x=0;x<=W;x+=20)ctx.lineTo(x,112+Math.sin(x*0.02+1)*8+Math.cos(x*0.04)*5);
+  ctx.lineTo(W,135);ctx.lineTo(0,135);ctx.closePath();ctx.fill();
+
+  // === GRASS AREA ===
+  rect(ctx,0,120,W,140,'#68a848');rect(ctx,0,128,W,132,'#5a9840');
+  // Grass texture
+  for(let x=0;x<W;x+=8)for(let y=125;y<145;y+=6){
+    const v=((x*3+y*7)%10)-5;
+    if(v>2)rect(ctx,x,y,2,3,`rgba(80,170,60,0.3)`);
   }
-  // Grass
-  rect(ctx,0,130,W,130,'#68a848');rect(ctx,0,138,W,122,'#5a9840');
-  // Path
-  rect(ctx,0,196,W,64,'#c8a868');
-  for(let x=0;x<W;x+=20)for(let y=200;y<250;y+=14)rect(ctx,x+(y%28?6:0),y,16,10,'#b89858');
-  // Store building
-  rect(ctx,230,80,160,120,'#b08848');rect(ctx,234,84,152,112,'#c8a060');
-  // Roof
-  ctx.fillStyle='#884030';
-  ctx.beginPath();ctx.moveTo(220,80);ctx.lineTo(310,40);ctx.lineTo(400,80);ctx.closePath();ctx.fill();
-  for(let y=44;y<80;y+=6){const w=(y-40)*2.3;rect(ctx,310-w/2,y,w,4,'#783828');}
-  // Window glow
-  rect(ctx,248,100,40,34,'#2a1a08');rect(ctx,252,104,14,28,'#f8e088');rect(ctx,270,104,14,28,'#f8e088');rect(ctx,266,100,4,34,'#5a3818');
-  // Door
-  rect(ctx,320,110,48,86,'#5a3818');rect(ctx,324,114,40,78,'#8a6838');rect(ctx,326,118,16,34,'#7a5830');rect(ctx,346,118,16,34,'#7a5830');
-  ctx.fillStyle='#d8a030';ctx.fillRect(356,150,6,6);
-  // Sign
-  rect(ctx,270,70,60,12,'#5a3818');rect(ctx,272,72,56,8,'#7a5830');
-  // Fence
-  ctx.fillStyle='#8a6838';
-  for(let x=90;x<230;x+=16){ctx.fillRect(x,160,4,30);ctx.fillRect(x,166,16,4);ctx.fillRect(x,180,16,4);}
-  for(let x=390;x<540;x+=16){ctx.fillRect(x,160,4,30);ctx.fillRect(x,166,16,4);ctx.fillRect(x,180,16,4);}
-  // Flowers
-  const fc=['#e84848','#d870c8','#f8d028','#e88838','#80b0e0'];
-  for(let i=0;i<10;i++){
-    const fx=80+Math.random()*440,fy=144+Math.random()*40;
-    rect(ctx,fx,fy,2,6,'#388828');
-    rect(ctx,fx-2,fy-4,6,6,fc[i%5]);rect(ctx,fx,fy-2,4,4,shade(fc[i%5],30));
+
+  // === STONE WALKING PATH (cobblestone/brick) ===
+  rect(ctx,0,180,W,80,'#c0a878');rect(ctx,0,182,W,76,'#b89868');
+  // Brick pattern
+  for(let y=182;y<258;y+=10){
+    const off=(Math.floor((y-182)/10)%2)*14;
+    for(let x=-off;x<W+14;x+=28){
+      const v=((x*5+y*3)%16)-8;
+      rect(ctx,x+1,y+1,25,8,`rgb(${176+v},${148+v},${96+v})`);
+      rect(ctx,x+1,y+1,25,2,`rgb(${186+v},${158+v},${106+v})`);
+    }
+    // Gaps between bricks
+    for(let x=-off;x<W+14;x+=28){
+      rect(ctx,x,y,1,10,'#a08860');rect(ctx,x+26,y,2,10,'#a08860');
+    }
+    rect(ctx,0,y+9,W,1,'rgba(0,0,0,0.06)');
   }
+
+  // === DRAW SHOP BUILDINGS — village outlet style ===
+  const drawShop = (x,w,h,wallColor,roofColor,doorColor,awningColor,signText,windowGlow) => {
+    const baseY=175; // buildings sit on path edge
+    const topY=baseY-h;
+
+    // Wall
+    rect(ctx,x,topY,w,h,wallColor);rect(ctx,x+2,topY+2,w-4,h-2,shade(wallColor,8));
+    // Wall shadow
+    rect(ctx,x,topY,3,h,shade(wallColor,15));rect(ctx,x+w-3,topY,3,h,shade(wallColor,-15));
+
+    // Roof (sloped)
+    const roofH=16;
+    ctx.fillStyle=roofColor;
+    ctx.beginPath();ctx.moveTo(x-6,topY);ctx.lineTo(x+w/2,topY-roofH);ctx.lineTo(x+w+6,topY);ctx.closePath();ctx.fill();
+    // Roof shingle lines
+    for(let ry=topY-roofH+4;ry<topY;ry+=4){
+      const rw=(ry-(topY-roofH))*((w+12)/roofH);
+      rect(ctx,x+w/2-rw/2,ry,rw,2,shade(roofColor,-12));
+    }
+
+    // Door
+    const dw=Math.min(20,w*0.3),dh=h*0.45;
+    const dx=x+w/2-dw/2,dy=baseY-dh;
+    rect(ctx,dx,dy,dw,dh,doorColor);rect(ctx,dx+2,dy+2,dw-4,dh-2,shade(doorColor,12));
+    rect(ctx,dx+dw-6,dy+dh*0.5,3,3,'#d8a030');// doorknob
+
+    // Windows
+    const winW=Math.min(16,w*0.18),winH=18;
+    if(w>50){
+      // Left window
+      const lx=x+8,ly=topY+14;
+      rect(ctx,lx,ly,winW,winH,'#2a1a08');rect(ctx,lx+2,ly+2,winW-4,winH-4,windowGlow);
+      rect(ctx,lx+winW/2-1,ly,2,winH,'#5a3818');// divider
+      // Right window
+      const rx=x+w-8-winW,ry=topY+14;
+      rect(ctx,rx,ry,winW,winH,'#2a1a08');rect(ctx,rx+2,ry+2,winW-4,winH-4,windowGlow);
+      rect(ctx,rx+winW/2-1,ry,2,winH,'#5a3818');
+    }else{
+      // Single window for small shops
+      const lx=x+w/2-winW/2,ly=topY+12;
+      rect(ctx,lx,ly,winW,winH,'#2a1a08');rect(ctx,lx+2,ly+2,winW-4,winH-4,windowGlow);
+    }
+
+    // Awning
+    rect(ctx,x-2,topY+h*0.35,w+4,8,awningColor);rect(ctx,x-2,topY+h*0.35,w+4,3,shade(awningColor,15));
+    // Awning stripes
+    for(let ax=x;ax<x+w;ax+=8)rect(ctx,ax,topY+h*0.35,4,8,shade(awningColor,-20));
+
+    // Sign above door
+    const sw=Math.min(w-8,50),sh=10;
+    const sx=x+w/2-sw/2,sy=topY+4;
+    rect(ctx,sx,sy,sw,sh,'#5a3818');rect(ctx,sx+1,sy+1,sw-2,sh-2,'#7a5830');
+  };
+
+  // Shop 1 — far left (bakery)
+  drawShop(10,70,80,'#d8b890','#884838','#6a4828','#c85050','BAKERY','#f8e088');
+  // Shop 2 — left-center (cafe)
+  drawShop(88,60,72,'#b8c8a8','#587848','#5a4020','#58a858','CAFE','#e8d890');
+  // Shop 3 — CENTER = player's shop (highlighted, slightly larger)
+  drawShop(158,90,90,'#c8a065','#884030','#5a3818','#d89040','SHOP','#f8e8a8');
+  // Highlight glow around player's shop
+  ctx.strokeStyle='rgba(248,232,120,0.25)';ctx.lineWidth=3;
+  ctx.strokeRect(155,82,96,96);
+  // Shop 4 — right-center (tailor)
+  drawShop(258,65,75,'#c0a0c8','#685878','#4a3848','#9878b8','TAILOR','#e8d8f0');
+  // Shop 5 — far right (florist)
+  drawShop(332,72,78,'#e8d0b0','#a87040','#6a4020','#e88848','FLORIST','#f0e890');
+
+  // === BACKGROUND SHOPS (smaller, further away) ===
+  const drawBgShop = (x,w,h,wallC,roofC) => {
+    const baseY=125;
+    rect(ctx,x,baseY-h,w,h,wallC);rect(ctx,x+1,baseY-h+1,w-2,h-1,shade(wallC,5));
+    ctx.fillStyle=roofC;
+    ctx.beginPath();ctx.moveTo(x-3,baseY-h);ctx.lineTo(x+w/2,baseY-h-8);ctx.lineTo(x+w+3,baseY-h);ctx.closePath();ctx.fill();
+    rect(ctx,x+w/2-5,baseY-h+6,10,h-6,'#3a2810');// tiny door
+    if(w>20){rect(ctx,x+4,baseY-h+4,6,6,'#f8e088');rect(ctx,x+w-10,baseY-h+4,6,6,'#e8d880');}
+  };
+  drawBgShop(430,40,38,'#d0b898','#785040');
+  drawBgShop(480,35,32,'#b8c0a0','#587048');
+  drawBgShop(524,42,36,'#c8a8b8','#705060');
+  drawBgShop(574,36,30,'#d8c8a0','#887040');
+
+  // === STREET LAMPS ===
+  const drawLamp = (lx) => {
+    rect(ctx,lx,130,4,48,'#606058');rect(ctx,lx,130,2,48,'#707068');// pole
+    rect(ctx,lx-6,126,16,6,'#505048');rect(ctx,lx-6,126,16,2,'#606058');// top
+    rect(ctx,lx-4,128,12,6,'#f8e878');rect(ctx,lx-2,130,8,3,'#f8f0a0');// glow
+    // Light glow circle
+    ctx.fillStyle='rgba(248,232,120,0.08)';
+    ctx.beginPath();ctx.arc(lx+2,135,20,0,Math.PI*2);ctx.fill();
+  };
+  drawLamp(148);drawLamp(355);drawLamp(520);
+
+  // === FLOWER POTS along the path ===
+  const drawPot = (px,py) => {
+    rect(ctx,px,py,10,8,'#a84828');rect(ctx,px+1,py+1,8,6,'#903820');
+    rect(ctx,px-1,py,12,2,'#b85838');
+    // Little plant
+    rect(ctx,px+3,py-6,4,6,'#48a840');rect(ctx,px+2,py-8,6,4,'#58b850');
+    // Small flower on top
+    const fc2=['#e84848','#f8d028','#d870c8','#80b0e0','#f09048'][Math.floor(px*7)%5];
+    rect(ctx,px+3,py-10,4,4,fc2);rect(ctx,px+4,py-9,2,2,shade(fc2,30));
+  };
+  drawPot(50,178);drawPot(130,178);drawPot(250,178);drawPot(320,178);drawPot(415,178);drawPot(570,178);
+
+  // === SMALL TREES between shops (background) ===
+  const drawSmallTree = (tx,ty) => {
+    rect(ctx,tx+4,ty+10,4,14,'#5a3818');rect(ctx,tx+4,ty+10,2,14,'#6a4828');
+    rect(ctx,tx,ty,12,12,'#48983040');rect(ctx,tx+1,ty+1,10,10,'#58a848');
+    rect(ctx,tx+2,ty+2,4,4,'#68b858');
+  };
+  drawSmallTree(80,108);drawSmallTree(405,110);drawSmallTree(560,112);
+
+  // === BENCH on path ===
+  rect(ctx,460,186,30,4,'#7a5830');rect(ctx,460,186,30,1,'#8a6838');// seat
+  rect(ctx,462,190,4,10,'#5a3818');rect(ctx,484,190,4,10,'#5a3818');// legs
+  rect(ctx,460,190,30,2,'#6a4828');// back
+
+  // === PATH DETAILS ===
+  // Small path connecting to side streets
+  rect(ctx,0,190,20,8,'#b89868');rect(ctx,600,190,20,8,'#b89868');
 };
 
 // ============ STARDEW-STYLE SHOP ITEMS ============
