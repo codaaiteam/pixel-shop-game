@@ -3981,23 +3981,34 @@ const patchedRenderDecorMenu = () => {
     }
     div.onclick=()=>{
       if(d.itemKey==='custom_decor'&&d.customDecor){
-        // Place custom decor as a visual element in the shop
-        const el=document.createElement('div');
-        el.className='placed-item';el.dataset.type='custom_decor';
-        el.style.cssText='position:absolute;left:400px;top:300px;cursor:move;z-index:10';
-        const cv=document.createElement('canvas');cv.width=60;cv.height=60;
-        cv.style.width='50px';cv.style.height='50px';cv.style.imageRendering='pixelated';
-        drawCustomDecorItem(cv.getContext('2d'),d.customDecor,60,60);
-        el.appendChild(cv);
-        document.getElementById('shop-area').appendChild(el);
-        // Make draggable
-        el.onpointerdown=(e)=>{
-          if(furnitureLocked)return;
-          const ox=e.clientX-el.offsetLeft,oy=e.clientY-el.offsetTop;
-          const move=(ev)=>{el.style.left=(ev.clientX-ox)+'px';el.style.top=(ev.clientY-oy)+'px';};
-          const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);};
-          document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);
-        };
+        // Place custom decor on a shelf — find first shelf with room
+        const shelves=document.querySelectorAll('#shop-area .placed-item[data-type="shelf"]');
+        let placed=false;
+        for(const shelf of shelves){
+          const existing=shelf.querySelectorAll('.clothing-on-shelf,.decor-on-shelf').length;
+          if(existing<3){
+            const el=document.createElement('canvas');
+            el.className='decor-on-shelf';
+            el.width=30;el.height=30;
+            el.style.cssText='width:30px;height:30px;image-rendering:pixelated;position:absolute;bottom:'+(2+existing*0)+'px;left:'+(4+existing*32)+'px';
+            el.dataset.customDecor=JSON.stringify(d.customDecor);
+            drawCustomDecorItem(el.getContext('2d'),d.customDecor,30,30);
+            // Click to pick back up
+            el.addEventListener('click',e=>{
+              e.stopPropagation();
+              ownedDecor.push(d);
+              el.parentElement.removeChild(el);
+              if(document.getElementById('decor-menu').style.display==='flex')patchedRenderDecorMenu();
+            });
+            shelf.appendChild(el);
+            placed=true;
+            break;
+          }
+        }
+        if(!placed){
+          document.getElementById('shop-hint').textContent='No shelf space! Buy more shelves in the Store.';
+          return;
+        }
       } else {
         placeItem(d.itemKey);
       }
