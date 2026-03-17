@@ -1881,7 +1881,9 @@ const CLOTHING_GRAPHICS=[
   {id:'lightning',name:'Lightning',locked:true},
   {id:'crown',name:'Crown',locked:true},
 ];
-let clothingState={type:'tshirt',color:0,graphic:null};
+let clothingState={type:'tshirt',color:0,graphic:null,placedGraphics:[]};
+// placedGraphics: [{id:'dog',x:46,y:35}, ...] — used when move_gfx_ability is purchased
+let draggingGraphicIdx=-1,dragOffX=0,dragOffY=0;
 
 const showLockedToast = () => {
   const t=document.getElementById('locked-toast');
@@ -2010,14 +2012,23 @@ const drawClothingPreview = () => {
     rect(ctx,20,91,80,3,cD);
   }
 
-  // Draw selected graphic centered on clothing
-  if(clothingState.graphic){
+  // Draw graphics
+  if(purchased['move_gfx_ability']&&clothingState.placedGraphics.length>0){
+    // Advanced mode: draw all placed graphics at their positions
+    clothingState.placedGraphics.forEach(pg=>{
+      ctx.save();
+      const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+      drawClothingGraphic(tc.getContext('2d'),pg.id,0,0);
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(tc,pg.x,pg.y,28,24);
+      ctx.restore();
+    });
+  } else if(clothingState.graphic){
+    // Legacy single graphic mode
     const gx=46,gy=clothingState.type==='hoodie'?38:clothingState.type==='jacket'?36:35;
     ctx.save();
-    // Scale graphic 3x
     const tc=document.createElement('canvas');tc.width=7;tc.height=6;
-    const tctx=tc.getContext('2d');
-    drawClothingGraphic(tctx,clothingState.graphic,0,0);
+    drawClothingGraphic(tc.getContext('2d'),clothingState.graphic,0,0);
     ctx.imageSmoothingEnabled=false;
     ctx.drawImage(tc,gx,gy,28,24);
     ctx.restore();
@@ -2034,7 +2045,7 @@ const initClothingScreen = () => {
     btn.textContent=t.name;
     btn.onclick=()=>{
       if(t.locked){showLockedToast();return;}
-      clothingState.type=t.id;clothingState.graphic=null;
+      clothingState.type=t.id;clothingState.graphic=null;clothingState.placedGraphics=[];
       initClothingScreen();
     };
     typesEl.appendChild(btn);
@@ -2054,17 +2065,73 @@ const initClothingScreen = () => {
   // Graphics
   const gfxEl=document.getElementById('graphics-list');
   gfxEl.innerHTML='';
+  const hasMovGfx=purchased['move_gfx_ability'];
   CLOTHING_GRAPHICS.forEach(g=>{
     const btn=document.createElement('button');
-    btn.className='graphic-btn'+(g.locked?' locked':'')+(clothingState.graphic===g.id?' selected':'');
-    btn.textContent=g.name;
-    btn.onclick=()=>{
-      if(g.locked){showLockedToast();return;}
-      clothingState.graphic=clothingState.graphic===g.id?null:g.id;
-      initClothingScreen();
-    };
+    if(hasMovGfx){
+      btn.className='graphic-btn'+(g.locked?' locked':'');
+      btn.textContent='+ '+g.name;
+      btn.onclick=()=>{
+        if(g.locked){showLockedToast();return;}
+        const gy=clothingState.type==='hoodie'?38:clothingState.type==='jacket'?36:35;
+        clothingState.placedGraphics.push({id:g.id,x:46,y:gy});
+        drawClothingPreview();
+      };
+    } else {
+      btn.className='graphic-btn'+(g.locked?' locked':'')+(clothingState.graphic===g.id?' selected':'');
+      btn.textContent=g.name;
+      btn.onclick=()=>{
+        if(g.locked){showLockedToast();return;}
+        clothingState.graphic=clothingState.graphic===g.id?null:g.id;
+        initClothingScreen();
+      };
+    }
     gfxEl.appendChild(btn);
   });
+
+  // Add "Clear All" button when move graphics ability is active and there are placed graphics
+  if(hasMovGfx&&clothingState.placedGraphics.length>0){
+    const clearBtn=document.createElement('button');
+    clearBtn.className='graphic-btn';clearBtn.textContent='Clear All';
+    clearBtn.style.background='#c84040';clearBtn.style.color='#f8e8c0';
+    clearBtn.onclick=()=>{clothingState.placedGraphics=[];drawClothingPreview();initClothingScreen();};
+    gfxEl.appendChild(clearBtn);
+  }
+
+  // Setup drag on clothing canvas for move graphics ability
+  if(hasMovGfx){
+    const cv=document.getElementById('clothing-canvas');
+    cv.onpointerdown=(e)=>{
+      const rect=cv.getBoundingClientRect();
+      const scaleX=120/rect.width,scaleY=120/rect.height;
+      const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+      // Find topmost graphic under pointer (check in reverse for top-most)
+      for(let i=clothingState.placedGraphics.length-1;i>=0;i--){
+        const pg=clothingState.placedGraphics[i];
+        if(mx>=pg.x&&mx<=pg.x+28&&my>=pg.y&&my<=pg.y+24){
+          draggingGraphicIdx=i;
+          dragOffX=mx-pg.x;dragOffY=my-pg.y;
+          e.preventDefault();
+          return;
+        }
+      }
+    };
+    cv.onpointermove=(e)=>{
+      if(draggingGraphicIdx<0)return;
+      const rect=cv.getBoundingClientRect();
+      const scaleX=120/rect.width,scaleY=120/rect.height;
+      const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+      const pg=clothingState.placedGraphics[draggingGraphicIdx];
+      pg.x=Math.round(Math.max(0,Math.min(92,mx-dragOffX)));
+      pg.y=Math.round(Math.max(0,Math.min(96,my-dragOffY)));
+      drawClothingPreview();
+    };
+    cv.onpointerup=()=>{draggingGraphicIdx=-1;};
+    cv.onpointerleave=()=>{draggingGraphicIdx=-1;};
+  } else {
+    const cv=document.getElementById('clothing-canvas');
+    cv.onpointerdown=null;cv.onpointermove=null;cv.onpointerup=null;cv.onpointerleave=null;
+  }
 
   drawClothingPreview();
 };
@@ -2081,7 +2148,8 @@ document.getElementById('clothing-save-design').onclick=()=>{
 
 document.getElementById('design-name-ok').onclick=()=>{
   const name=document.getElementById('design-name-input').value.trim()||'Design '+(savedDesigns.length+1);
-  savedDesigns.push({name,type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic});
+  savedDesigns.push({name,type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic,
+    placedGraphics:clothingState.placedGraphics.length>0?clothingState.placedGraphics.map(g=>({...g})):null});
   document.getElementById('save-design-popup').style.display='none';
   if(typeof saveGame==='function')saveGame();
   // Show saved clothing tutorial on first save
@@ -2367,6 +2435,7 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
   el.dataset.clothingGraphic=item.graphic||'none';
   el.dataset.clothingColor=item.color;
   el.dataset.clothingType=item.type;
+  if(item.placedGraphics)el.dataset.placedGraphics=JSON.stringify(item.placedGraphics);
 
   if(isMannequin){
     el.width=24;el.height=30;
@@ -2431,8 +2500,15 @@ const placeClothingOnFurniture = (target,item,invIdx) => {
       rect(mc,9,6,1,10,'rgba(0,0,0,0.06)');rect(mc,14,6,1,10,'rgba(0,0,0,0.06)');
     }
 
-    // Draw graphic centered on clothing body
-    if(item.graphic&&item.graphic!=='none'){
+    // Draw graphics on clothing body
+    if(item.placedGraphics&&item.placedGraphics.length>0){
+      mc.imageSmoothingEnabled=false;
+      item.placedGraphics.forEach(pg=>{
+        const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+        drawClothingGraphic(tc.getContext('2d'),pg.id,0,0);
+        mc.drawImage(tc,Math.round(pg.x/5),Math.round(pg.y/5),6,5);
+      });
+    } else if(item.graphic&&item.graphic!=='none'){
       const tc=document.createElement('canvas');tc.width=7;tc.height=6;
       drawClothingGraphic(tc.getContext('2d'),item.graphic,0,0);
       mc.imageSmoothingEnabled=false;
@@ -2494,7 +2570,7 @@ document.getElementById('design-btn').onclick=()=>{
   } else {
     if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
     showScreen('clothing-screen');
-    clothingState={type:'tshirt',color:0,graphic:null};
+    clothingState={type:'tshirt',color:0,graphic:null,placedGraphics:[]};
     initClothingScreen();
   }
 };
@@ -2503,7 +2579,7 @@ document.getElementById('design-btn').onclick=()=>{
 document.getElementById('choose-clothing-btn').onclick=()=>{
   if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
   showScreen('clothing-screen');
-  clothingState={type:'tshirt',color:0,graphic:null};
+  clothingState={type:'tshirt',color:0,graphic:null,placedGraphics:[]};
   initClothingScreen();
 };
 document.getElementById('choose-decor-btn').onclick=()=>{
@@ -2520,10 +2596,11 @@ document.getElementById('clothing-done').onclick=()=>{
   if(usedClothingSlots>=maxClothingSlots){showLockedToast();return;}
   // Save designed clothing to inventory
   usedClothingSlots++;
-  const newItem={type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic};
+  const newItem={type:clothingState.type,color:clothingState.color,graphic:clothingState.graphic,
+    placedGraphics:clothingState.placedGraphics.length>0?clothingState.placedGraphics.map(g=>({...g})):null};
   inventory.push(newItem);
   allDesignedClothing.push(newItem);
-  clothingState={type:'tshirt',color:0,graphic:null};
+  clothingState={type:'tshirt',color:0,graphic:null,placedGraphics:[]};
   showScreen('shop-screen');
   requestAnimationFrame(gameLoop);
   // Show shop tab with notification
@@ -3059,6 +3136,7 @@ const STORE_SUPPLIES=[
   {id:'type_hoodie',name:'Hoodie Pattern',price:20,type:'clothingType',unlockId:'hoodie'},
   {id:'type_jacket',name:'Jacket Pattern',price:20,type:'clothingType',unlockId:'jacket'},
   {id:'decor_ability',name:'Design Decor Ability',price:30,type:'ability'},
+  {id:'move_gfx_ability',name:'Move Graphics Ability',price:25,type:'ability'},
 ];
 const STORE_FURNITURE=[
   {id:'shelf_oak',name:'Oak Shelf',price:30,type:'furniture',itemKey:'shelf'},
@@ -3192,12 +3270,21 @@ const renderStoreMenu = () => {
     } else if(si.type==='ability'){
       preview.width=24;preview.height=20;preview.style.width='48px';preview.style.height='40px';
       const pc=preview.getContext('2d');
-      // Paintbrush + pot icon
-      rect(pc,3,10,8,8,c='#b87848');rect(pc,5,12,4,4,'#d09868');
-      rect(pc,3,8,8,3,'#689848');rect(pc,5,6,4,2,'#78a858');
-      // Brush
-      rect(pc,14,2,3,8,'#a08060');rect(pc,15,10,1,4,'#806040');
-      rect(pc,14,2,3,2,'#d04040');
+      if(si.id==='move_gfx_ability'){
+        // Move arrows icon with star
+        rect(pc,10,2,4,16,'#d8b878');rect(pc,2,8,20,4,'#d8b878');
+        // Arrowheads
+        rect(pc,8,2,8,2,'#c8a868');rect(pc,8,16,8,2,'#c8a868');
+        rect(pc,2,6,2,8,'#c8a868');rect(pc,20,6,2,8,'#c8a868');
+        // Star in center
+        rect(pc,10,8,4,4,'#f8d028');rect(pc,11,7,2,1,'#f8d028');rect(pc,11,12,2,1,'#f8d028');
+      } else {
+        // Paintbrush + pot icon (decor ability)
+        rect(pc,3,10,8,8,'#b87848');rect(pc,5,12,4,4,'#d09868');
+        rect(pc,3,8,8,3,'#689848');rect(pc,5,6,4,2,'#78a858');
+        rect(pc,14,2,3,8,'#a08060');rect(pc,15,10,1,4,'#806040');
+        rect(pc,14,2,3,2,'#d04040');
+      }
     } else if(si.type==='avatar'){
       preview.width=32;preview.height=32;preview.style.width='48px';preview.style.height='48px';
       const tempPlayer=Object.assign({},player);
@@ -3237,8 +3324,11 @@ const renderStoreMenu = () => {
           maxClothingSlots+=si.amount;
           updateDesignBtn();
         } else if(si.type==='ability'){
-          // Unlock decor design ability
-          document.getElementById('shop-hint').textContent='Design button upgraded! You can now design decor!';
+          if(si.id==='decor_ability'){
+            document.getElementById('shop-hint').textContent='Design button upgraded! You can now design decor!';
+          } else if(si.id==='move_gfx_ability'){
+            document.getElementById('shop-hint').textContent='Graphics upgraded! You can now move, duplicate & layer graphics!';
+          }
         } else if(si.type==='furniture'||si.type==='decor'){
           ownedDecor.push({itemKey:si.itemKey,id:si.id});
           boughtFurniture=true;
@@ -3770,6 +3860,18 @@ const drawDecorPreview = () => {
     // Light glow
     ctx.fillStyle='rgba(255,255,200,0.2)';ctx.fillRect(38,40,44,50);
   }
+
+  // Draw placed graphics on decor (when move_gfx_ability owned)
+  if(decorState.placedGraphics&&decorState.placedGraphics.length>0){
+    decorState.placedGraphics.forEach(pg=>{
+      ctx.save();
+      const tc=document.createElement('canvas');tc.width=7;tc.height=6;
+      drawClothingGraphic(tc.getContext('2d'),pg.id,0,0);
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(tc,pg.x,pg.y,28,24);
+      ctx.restore();
+    });
+  }
 };
 
 const drawSculpturePreview = (ctx,c,a) => {
@@ -3826,7 +3928,7 @@ const drawSculpturePreview = (ctx,c,a) => {
 };
 
 const initDecorDesign = () => {
-  decorState={type:'pot',color:0,accent:4,sculptShape:'cat'};
+  decorState={type:'pot',color:0,accent:4,sculptShape:'cat',placedGraphics:[]};
   // Render type buttons
   const typesEl=document.getElementById('decor-types');
   typesEl.innerHTML='';
@@ -3870,6 +3972,67 @@ const initDecorDesign = () => {
     swatch.onclick=()=>{decorState.accent=i;renderDecorColors();drawDecorPreview();};
     accentEl.appendChild(swatch);
   });
+
+  // Graphics palette for decor (when move_gfx_ability is purchased)
+  if(purchased['move_gfx_ability']){
+    let gfxSection=document.getElementById('decor-gfx-section');
+    if(!gfxSection){
+      gfxSection=document.createElement('div');gfxSection.id='decor-gfx-section';
+      gfxSection.className='design-section';
+      const label=document.createElement('label');label.textContent='GRAPHICS';
+      gfxSection.appendChild(label);
+      const gfxList=document.createElement('div');gfxList.className='graphics-list';gfxList.id='decor-graphics-list';
+      gfxSection.appendChild(gfxList);
+      document.getElementById('decor-sidebar').appendChild(gfxSection);
+    }
+    const gfxEl=document.getElementById('decor-graphics-list');
+    gfxEl.innerHTML='';
+    CLOTHING_GRAPHICS.forEach(g=>{
+      if(g.locked)return;
+      const btn=document.createElement('button');
+      btn.className='graphic-btn';btn.textContent='+ '+g.name;
+      btn.onclick=()=>{
+        decorState.placedGraphics.push({id:g.id,x:46,y:45});
+        drawDecorPreview();
+      };
+      gfxEl.appendChild(btn);
+    });
+    if(decorState.placedGraphics.length>0){
+      const clearBtn=document.createElement('button');
+      clearBtn.className='graphic-btn';clearBtn.textContent='Clear All';
+      clearBtn.style.background='#c84040';clearBtn.style.color='#f8e8c0';
+      clearBtn.onclick=()=>{decorState.placedGraphics=[];drawDecorPreview();initDecorDesign();};
+      gfxEl.appendChild(clearBtn);
+    }
+    // Drag support on decor canvas
+    const cv=document.getElementById('decor-canvas');
+    let decorDragIdx=-1,decorDragOX=0,decorDragOY=0;
+    cv.onpointerdown=(e)=>{
+      const r=cv.getBoundingClientRect();
+      const sx=120/r.width,sy=120/r.height;
+      const mx=(e.clientX-r.left)*sx,my=(e.clientY-r.top)*sy;
+      for(let i=decorState.placedGraphics.length-1;i>=0;i--){
+        const pg=decorState.placedGraphics[i];
+        if(mx>=pg.x&&mx<=pg.x+28&&my>=pg.y&&my<=pg.y+24){
+          decorDragIdx=i;decorDragOX=mx-pg.x;decorDragOY=my-pg.y;
+          e.preventDefault();return;
+        }
+      }
+    };
+    cv.onpointermove=(e)=>{
+      if(decorDragIdx<0)return;
+      const r=cv.getBoundingClientRect();
+      const sx=120/r.width,sy=120/r.height;
+      const mx=(e.clientX-r.left)*sx,my=(e.clientY-r.top)*sy;
+      const pg=decorState.placedGraphics[decorDragIdx];
+      pg.x=Math.round(Math.max(0,Math.min(92,mx-decorDragOX)));
+      pg.y=Math.round(Math.max(0,Math.min(96,my-decorDragOY)));
+      drawDecorPreview();
+    };
+    cv.onpointerup=()=>{decorDragIdx=-1;};
+    cv.onpointerleave=()=>{decorDragIdx=-1;};
+  }
+
   drawDecorPreview();
 };
 
@@ -3886,7 +4049,8 @@ const renderDecorColors = () => {
 
 // Decor done - save to inventory and go back to shop
 document.getElementById('decor-done').onclick=()=>{
-  const newDecor={type:decorState.type,color:decorState.color,accent:decorState.accent,sculptShape:decorState.sculptShape};
+  const newDecor={type:decorState.type,color:decorState.color,accent:decorState.accent,sculptShape:decorState.sculptShape,
+    placedGraphics:decorState.placedGraphics&&decorState.placedGraphics.length>0?decorState.placedGraphics.map(g=>({...g})):null};
   designedDecor.push(newDecor);
   // Also add to ownedDecor so it can be placed as 'custom_decor'
   ownedDecor.push({itemKey:'custom_decor',id:'custom_'+Date.now(),customDecor:newDecor});
@@ -4045,6 +4209,7 @@ const serializeClothingOnDisplay = () => {
         clothingType:el.dataset.clothingType||'tshirt',
         clothingColor:parseInt(el.dataset.clothingColor)||0,
         clothingGraphic:el.dataset.clothingGraphic||'none',
+        placedGraphics:el.dataset.placedGraphics?JSON.parse(el.dataset.placedGraphics):null,
         className:el.className
       });
     });
@@ -4058,13 +4223,13 @@ const buildSaveObject = () => ({
   player:{...player},
   roomStyle:{...roomStyle},
   money,dayCount,
-  inventory:inventory.map(i=>({type:i.type,color:i.color,graphic:i.graphic})),
-  allDesignedClothing:allDesignedClothing.map(i=>({type:i.type,color:i.color,graphic:i.graphic})),
+  inventory:inventory.map(i=>({type:i.type,color:i.color,graphic:i.graphic,placedGraphics:i.placedGraphics||null})),
+  allDesignedClothing:allDesignedClothing.map(i=>({type:i.type,color:i.color,graphic:i.graphic,placedGraphics:i.placedGraphics||null})),
   usedClothingSlots,maxClothingSlots,
   unlockedClothingTypes:CLOTHING_TYPES.filter(t=>!t.locked).map(t=>t.id),
   unlockedGraphics:CLOTHING_GRAPHICS.filter(g=>!g.locked).map(g=>g.id),
   purchased:{...purchased},
-  savedDesigns:savedDesigns.map(sd=>({name:sd.name,type:sd.type,color:sd.color,graphic:sd.graphic})),
+  savedDesigns:savedDesigns.map(sd=>({name:sd.name,type:sd.type,color:sd.color,graphic:sd.graphic,placedGraphics:sd.placedGraphics||null})),
   ownedDecor:ownedDecor.map(d=>({itemKey:d.itemKey,id:d.id,customDecor:d.customDecor||null})),
   designedDecor:designedDecor.map(d=>({type:d.type,color:d.color,accent:d.accent,sculptShape:d.sculptShape})),
   ownedAvatarClothes:ownedAvatarClothes.map(a=>({id:a.id,name:a.name,accIdx:a.accIdx})),
@@ -4157,7 +4322,7 @@ const restoreState = (save) => {
     const allFurn=area.querySelectorAll('.placed-item');
     const target=allFurn[cd.furnitureIdx];
     if(target){
-      const item={type:cd.clothingType,color:cd.clothingColor,graphic:cd.clothingGraphic==='none'?null:cd.clothingGraphic};
+      const item={type:cd.clothingType,color:cd.clothingColor,graphic:cd.clothingGraphic==='none'?null:cd.clothingGraphic,placedGraphics:cd.placedGraphics||null};
       inventory.push(item);
       placeClothingOnFurniture(target,item,inventory.length-1);
     }
