@@ -88,3 +88,10 @@ Buy upgrades with earned money:
 
 ## License
 MIT
+
+## Chat History
+<img width="372" height="419" alt="Screenshot 2026-03-18 at 10 32 35 AM" src="https://github.com/user-attachments/assets/11fafebe-cd21-4acf-9b25-5d7fc67dfcb7" />
+<img width="381" height="466" alt="Screenshot 2026-03-18 at 10 32 46 AM" src="https://github.com/user-attachments/assets/8a782b7b-d298-4dcf-84b1-de8dec513812" />
+<img width="380" height="468" alt="Screenshot 2026-03-18 at 10 33 00 AM" src="https://github.com/user-attachments/assets/522fc1e2-c910-4632-82e3-0fbf6990c4db" />
+
+
