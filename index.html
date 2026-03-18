@@ -4344,7 +4344,7 @@ const restoreState = (save) => {
   // Show tabs
   if(shopTabVisible)showShopTab(false);
   if(storeTabShown)showStoreTab();
-  if(ownedDecor.length>0||ownedAvatarClothes.length>0)showDecorAndAvatarTabs();
+  if(storeTabShown||ownedDecor.length>0||ownedAvatarClothes.length>0)showDecorAndAvatarTabs();
   if(mailTabShown)showMailTab();
 
   // Show buttons & money
