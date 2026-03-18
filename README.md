@@ -1,8 +1,40 @@
 # Pixel Shop Game
 
+My 11-year-old built this shop simulation game in just 2 days using AI tools.
+
 A Stardew Valley-inspired pixel art clothing shop management game. Build, decorate, and run your own boutique store in a cozy village outlet shopping area.
 
 **Play now:** https://codaaiteam.github.io/pixel-shop-game/
+
+---
+
+## What you can do
+
+- Decorate your shop (walls, floors, furniture)
+- Design and sell clothes (t-shirts, hoodies, jackets)
+- Serve customers and earn money
+- Expand your boutique with upgrades
+
+---
+
+## Why this exists
+
+This started as a small experiment:
+
+What happens if a kid uses AI to build a real game?
+
+She had no prior game dev experience.  
+She spent a morning prototyping, then about 2 days refining it.
+
+---
+
+## Built with
+
+- HTML5 Canvas
+- Vanilla JavaScript (single file)
+- AI-assisted development (OpenClaw + Claude)
+
+---
 
 ## Gameplay
 
@@ -59,6 +91,8 @@ Buy upgrades with earned money:
 - Hoodies show hood, kangaroo pocket, and drawstrings
 - Jackets show collar, lapels, zipper, and pockets
 
+---
+
 ## Save System
 - Progress saves automatically every 30 seconds, after each day, and on page close
 - Saves to browser localStorage
@@ -75,10 +109,14 @@ Buy upgrades with earned money:
 - Mail messages and Alyssa's state
 - Saved clothing designs
 
+---
+
 ## Controls
 - **Arrow keys** or **WASD** - move player
 - **Mouse drag** - move furniture, drag clothing from inventory to furniture
 - **Click** - place items, interact with UI
+
+---
 
 ## Tech
 - Pure HTML5 Canvas + vanilla JavaScript
@@ -86,12 +124,28 @@ Buy upgrades with earned money:
 - Procedural pixel art sprite generation with auto-outline
 - No dependencies, no build tools
 
+---
+
+## Screenshots
+<img width="372" height="419" src="https://github.com/user-attachments/assets/11fafebe-cd21-4acf-9b25-5d7fc67dfcb7" />
+<img width="381" height="466" src="https://github.com/user-attachments/assets/8a782b7b-d298-4dcf-84b1-de8dec513812" />
+<img width="380" height="468" src="https://github.com/user-attachments/assets/522fc1e2-c910-4632-82e3-0fbf6990c4db" />
+
+---
+
 ## License
 MIT
 
-## Chat History
-<img width="372" height="419" alt="Screenshot 2026-03-18 at 10 32 35 AM" src="https://github.com/user-attachments/assets/11fafebe-cd21-4acf-9b25-5d7fc67dfcb7" />
-<img width="381" height="466" alt="Screenshot 2026-03-18 at 10 32 46 AM" src="https://github.com/user-attachments/assets/8a782b7b-d298-4dcf-84b1-de8dec513812" />
-<img width="380" height="468" alt="Screenshot 2026-03-18 at 10 33 00 AM" src="https://github.com/user-attachments/assets/522fc1e2-c910-4632-82e3-0fbf6990c4db" />
+---
 
+## Feedback welcome
 
+We’re especially curious about:
+
+- Is the gameplay fun?
+- What would make it more engaging?
+- What should be added next?
+
+---
+
+## If you like it, give it a star
